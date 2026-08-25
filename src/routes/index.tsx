@@ -175,7 +175,7 @@ function Home() {
           <ol className="mt-10 grid gap-5 md:grid-cols-4">
             {steps.map((step, i) => (
               <li key={step.title} className="surface-panel relative p-6">
-                <span className="font-mono text-xs font-semibold text-accent">
+                <span className="font-mono text-xs font-semibold text-accent-text">
                   STEP {String(i + 1).padStart(2, "0")}
                 </span>
                 <step.icon className="mt-3 size-6 text-primary" />
@@ -192,7 +192,7 @@ function Home() {
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {pitch.map((item) => (
             <article key={item.tag} className="surface-panel flex flex-col p-7">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-text">
                 {item.tag}
               </span>
               <h3 className="mt-3 text-xl font-semibold">{item.title}</h3>

@@ -163,7 +163,7 @@ function Pay() {
                   <Search className="size-5" />
                 </span>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
                     Step 01
                   </p>
                   <h2 className="text-xl font-semibold">Find your ticket</h2>
@@ -289,16 +289,14 @@ function TicketDetails({
     <div>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
             Ticket found
           </p>
           <h2 className="mt-1 font-mono text-lg font-semibold">{ticket.ticket_number}</h2>
         </div>
         <span
           className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
-            canPay
-              ? "bg-warning/20 text-warning-foreground"
-              : "bg-success/15 text-success-foreground"
+            canPay ? "bg-warning/20 text-warning-foreground" : "bg-success/15 text-success"
           }`}
         >
           {ticket.status}
@@ -367,7 +365,7 @@ function TicketDetails({
           </Button>
         </form>
       ) : (
-        <div className="mt-6 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success-foreground">
+        <div className="mt-6 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success">
           This ticket is already marked as {ticket.status}. No further payment is required.
         </div>
       )}
@@ -401,7 +399,9 @@ function PaymentReview({
           <ClipboardCheck className="size-5" />
         </span>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">Step 03</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
+            Step 03
+          </p>
           <h2 className="text-xl font-semibold">Review payment details</h2>
         </div>
       </div>

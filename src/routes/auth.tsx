@@ -260,9 +260,7 @@ function Auth() {
           </div>
 
           {message ? (
-            <p className="rounded-md bg-success/10 px-3 py-2 text-sm text-success-foreground">
-              {message}
-            </p>
+            <p className="rounded-md bg-success/10 px-3 py-2 text-sm text-success">{message}</p>
           ) : null}
           {error ? (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

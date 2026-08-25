@@ -595,7 +595,7 @@ function Dashboard() {
             <span
               className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium ${
                 liveConnected
-                  ? "border-success/30 bg-success/10 text-success-foreground"
+                  ? "border-success/30 bg-success/10 text-success"
                   : "border-border bg-secondary/50"
               }`}
             >
@@ -639,7 +639,7 @@ function Dashboard() {
         </div>
       ) : null}
       {notice ? (
-        <div className="mt-6 flex items-start gap-3 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success-foreground">
+        <div className="mt-6 flex items-start gap-3 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success">
           <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
           <span>{notice}</span>
         </div>
@@ -983,7 +983,7 @@ function RoleWorkspace({
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Live status
               </p>
-              <p className="mt-2 text-2xl font-bold text-success-foreground">Ready</p>
+              <p className="mt-2 text-2xl font-bold text-success">Ready</p>
               <p className="mt-1 text-xs text-muted-foreground">Demo data connected</p>
             </div>
           </div>
@@ -1045,15 +1045,15 @@ function RoleWorkspace({
           </div>
           <ul className="mt-5 space-y-3 text-sm leading-5 text-muted-foreground">
             <li className="flex min-w-0 items-start gap-2">
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success-foreground" />
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
               <span className="break-words">Confirm ticket and plate details.</span>
             </li>
             <li className="flex min-w-0 items-start gap-2">
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success-foreground" />
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
               <span className="break-words">Select the correct ordinance code.</span>
             </li>
             <li className="flex min-w-0 items-start gap-2">
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success-foreground" />
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
               <span className="break-words">Keep the fine and location accurate.</span>
             </li>
           </ul>
@@ -1128,7 +1128,7 @@ function StatCard({
     <article className="surface-panel p-5">
       <div className="flex items-center justify-between gap-3">
         <span
-          className={`flex size-9 items-center justify-center rounded-lg ${tone === "accent" ? "bg-accent/20 text-accent-foreground" : tone === "success" ? "bg-success/15 text-success-foreground" : "bg-secondary text-primary"}`}
+          className={`flex size-9 items-center justify-center rounded-lg ${tone === "accent" ? "bg-accent/20 text-accent-foreground" : tone === "success" ? "bg-success/15 text-success" : "bg-secondary text-primary"}`}
         >
           <Icon className="size-4" />
         </span>
@@ -1435,7 +1435,7 @@ function PaymentHistory({
             Every completed gateway settlement with its reference and channel.
           </p>
         </div>
-        <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-accent">
+        <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-accent-text">
           <CircleDollarSign className="size-4" /> {payments.length} records
         </span>
       </div>

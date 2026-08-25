@@ -392,9 +392,7 @@ function Portal() {
             </div>
 
             {message ? (
-              <p className="rounded-md bg-success/10 px-3 py-2 text-sm text-success-foreground">
-                {message}
-              </p>
+              <p className="rounded-md bg-success/10 px-3 py-2 text-sm text-success">{message}</p>
             ) : null}
             {error ? (
               <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -518,7 +516,7 @@ function CitizenDashboard({
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[0.75fr_1.25fr]">
         <section className="surface-panel p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
             Quick actions
           </p>
           <h2 className="mt-2 text-2xl font-semibold">What do you need today?</h2>
@@ -543,12 +541,12 @@ function CitizenDashboard({
         <section className="surface-panel p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
                 My profile
               </p>
               <h2 className="mt-2 text-2xl font-semibold">Account details</h2>
             </div>
-            <span className="flex size-11 items-center justify-center rounded-full bg-success/15 text-success-foreground">
+            <span className="flex size-11 items-center justify-center rounded-full bg-success/15 text-success">
               <UserRound className="size-5" />
             </span>
           </div>
@@ -567,7 +565,7 @@ function CitizenDashboard({
             </div>
             <div className="rounded-lg bg-secondary/60 p-4">
               <p className="text-xs text-muted-foreground">Access</p>
-              <p className="mt-1 font-medium text-success-foreground">Citizen account active</p>
+              <p className="mt-1 font-medium text-success">Citizen account active</p>
             </div>
           </div>
         </section>
@@ -625,7 +623,7 @@ function CitizenTicketLookup() {
       <div className="border-b border-border bg-secondary/35 p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
               Ticket center
             </p>
             <h2 className="mt-2 text-2xl font-semibold">Look up another ticket</h2>
@@ -701,7 +699,7 @@ function CitizenViolationList({ tickets }: { tickets: PublicTicket[] }) {
     <section className="surface-panel mt-6 overflow-hidden">
       <div className="flex flex-col gap-2 border-b border-border p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
             My records
           </p>
           <h2 className="mt-2 text-2xl font-semibold">My violation list</h2>
@@ -841,7 +839,7 @@ function CitizenStat({
   return (
     <article className="surface-panel p-5">
       <span
-        className={`flex size-10 items-center justify-center rounded-lg ${tone === "accent" ? "bg-accent/20 text-accent-foreground" : tone === "success" ? "bg-success/15 text-success-foreground" : "bg-secondary text-primary"}`}
+        className={`flex size-10 items-center justify-center rounded-lg ${tone === "accent" ? "bg-accent/20 text-accent-foreground" : tone === "success" ? "bg-success/15 text-success" : "bg-secondary text-primary"}`}
       >
         <Icon className="size-5" />
       </span>

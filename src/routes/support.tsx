@@ -93,7 +93,7 @@ function Support() {
                 <CircleHelp className="size-5" />
               </span>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
                   Quick answers
                 </p>
                 <h2 className="text-xl font-semibold">Common questions</h2>
@@ -113,7 +113,7 @@ function Support() {
           </section>
 
           <section className="surface-panel p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
               Direct contact
             </p>
             <div className="mt-5 space-y-4">
@@ -134,7 +134,7 @@ function Support() {
               <Ticket className="size-5" />
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
                 Support request
               </p>
               <h2 className="text-xl font-semibold">Tell us what happened</h2>
@@ -142,7 +142,7 @@ function Support() {
           </div>
 
           {submitted ? (
-            <div className="mt-8 rounded-xl border border-success/30 bg-success/10 p-6 text-center text-success-foreground">
+            <div className="mt-8 rounded-xl border border-success/30 bg-success/10 p-6 text-center text-success">
               <CheckCircle2 className="mx-auto size-8" />
               <h3 className="mt-3 font-semibold">Your email draft is ready</h3>
               <p className="mt-1 text-sm">
@@ -228,7 +228,7 @@ function Support() {
 
       <div className="hero-gradient mt-8 flex flex-col gap-5 rounded-2xl px-6 py-8 text-primary-foreground sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <div className="flex items-start gap-3">
-          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-accent" />
+          <ShieldCheck className="mt-0.5 size-5 shrink-0 text-accent-text" />
           <div>
             <h2 className="font-semibold">Need to settle a ticket now?</h2>
             <p className="mt-1 text-sm text-primary-foreground/75">
