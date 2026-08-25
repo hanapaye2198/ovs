@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { normalizeVehiclePlate } from "@/lib/plate";
 import {
   clearDemoStaffSession,
   DEMO_MODE,
@@ -278,8 +279,10 @@ function Dashboard() {
 
   const filteredViolations = useMemo(() => {
     const normalized = query.trim().toLowerCase();
+    const compactPlateQuery = normalizeVehiclePlate(query).replace(/\s/g, "");
     return violations.filter((violation) => {
       const matchesStatus = statusFilter === "all" || violation.status === statusFilter;
+      const normalizedPlate = normalizeVehiclePlate(violation.vehicle_plate).replace(/\s/g, "");
       const matchesQuery =
         !normalized ||
         [
@@ -290,7 +293,8 @@ function Dashboard() {
         ]
           .join(" ")
           .toLowerCase()
-          .includes(normalized);
+          .includes(normalized) ||
+        (Boolean(compactPlateQuery) && normalizedPlate.includes(compactPlateQuery));
       return matchesStatus && matchesQuery;
     });
   }, [query, statusFilter, violations]);
@@ -410,7 +414,7 @@ function Dashboard() {
         violator_name: draft.violatorName.trim(),
         address: null,
         license_number: null,
-        vehicle_plate: draft.vehiclePlate.trim() || null,
+        vehicle_plate: normalizeVehiclePlate(draft.vehiclePlate) || null,
         violation_type: draft.violationType.trim(),
         ordinance_code: draft.ordinanceCode.trim() || null,
         fine_amount: Number(draft.fineAmount),
@@ -440,7 +444,7 @@ function Dashboard() {
       ordinance_code: draft.ordinanceCode.trim() || null,
       fine_amount: Number(draft.fineAmount),
       location: draft.location.trim() || null,
-      vehicle_plate: draft.vehiclePlate.trim() || null,
+      vehicle_plate: normalizeVehiclePlate(draft.vehiclePlate) || null,
       officer: draft.officer.trim() || null,
       created_by: userId,
     });
@@ -468,7 +472,7 @@ function Dashboard() {
       ordinance_code: draft.ordinanceCode.trim() || null,
       fine_amount: Number(draft.fineAmount),
       location: draft.location.trim() || null,
-      vehicle_plate: draft.vehiclePlate.trim() || null,
+      vehicle_plate: normalizeVehiclePlate(draft.vehiclePlate) || null,
       officer: draft.officer.trim() || null,
       status: draft.status,
     };
@@ -525,7 +529,7 @@ function Dashboard() {
       ordinanceCode: violation.ordinance_code ?? "",
       fineAmount: String(violation.fine_amount),
       location: violation.location ?? "",
-      vehiclePlate: violation.vehicle_plate ?? "",
+      vehiclePlate: normalizeVehiclePlate(violation.vehicle_plate),
       officer: violation.officer ?? "",
       status: violation.status,
     });

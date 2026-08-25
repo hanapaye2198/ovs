@@ -4,43 +4,11 @@ import { ArrowLeft, Check, CheckCircle2, Megaphone, ShieldCheck } from "lucide-r
 
 import trafficImage from "@/assets/edsa-traffic-xl-f14437c9.png";
 import tagumCityLogo from "@/assets/tagum-city-seal.png";
-import { DEMO_MODE, DEMO_VIOLATIONS, DEMO_VIOLATIONS_STORAGE_KEY } from "@/lib/demo-data";
+import { DEMO_MODE } from "@/lib/demo-data";
+import { readDemoViolationsByPlate } from "@/lib/demo-lookup";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { lookupViolationsByPlate, type PublicTicket } from "@/lib/ovs.functions";
-
-function readDemoPlateTickets(vehiclePlate: string): PublicTicket[] {
-  const normalizedPlate = vehiclePlate.toUpperCase().replace(/\s+/g, " ").trim();
-  let records = DEMO_VIOLATIONS;
-
-  if (typeof window !== "undefined") {
-    const stored = window.localStorage.getItem(DEMO_VIOLATIONS_STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed: unknown = JSON.parse(stored);
-        if (Array.isArray(parsed)) records = parsed as typeof DEMO_VIOLATIONS;
-      } catch {
-        records = DEMO_VIOLATIONS;
-      }
-    }
-  }
-
-  return records
-    .filter(
-      (record) =>
-        record.vehicle_plate?.toUpperCase().replace(/\s+/g, " ").trim() === normalizedPlate,
-    )
-    .map((record) => ({
-      ticket_number: record.ticket_number,
-      violator_name: record.violator_name,
-      violation_type: record.violation_type,
-      ordinance_code: record.ordinance_code,
-      fine_amount: Number(record.fine_amount),
-      location: record.location,
-      issued_at: record.issued_at,
-      status: record.status,
-      vehicle_plate: record.vehicle_plate,
-    }));
-}
+import { normalizeVehiclePlate } from "@/lib/plate";
 
 export const Route = createFileRoute("/pay")({
   head: () => ({
@@ -83,9 +51,9 @@ function Pay() {
     setMatches([]);
 
     try {
-      const normalizedPlate = plateNumber.toUpperCase().replace(/\s+/g, " ").trim();
+      const normalizedPlate = normalizeVehiclePlate(plateNumber);
       const tickets = DEMO_MODE
-        ? readDemoPlateTickets(normalizedPlate)
+        ? readDemoViolationsByPlate(normalizedPlate)
         : (await lookupViolationsByPlate({ data: { vehiclePlate: normalizedPlate } })).tickets;
 
       setMatches(tickets);

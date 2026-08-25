@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { normalizeVehiclePlate } from "@/lib/plate";
 
 const lookupSchema = z.object({ ticketNumber: z.string().trim().min(4).max(40) });
 const plateLookupSchema = z.object({ vehiclePlate: z.string().trim().min(2).max(20) });
@@ -56,6 +57,7 @@ export const lookupTicket = createServerFn({ method: "POST" })
         ...row,
         fine_amount: Number(row.fine_amount),
         violator_name: maskName(row.violator_name),
+        vehicle_plate: normalizeVehiclePlate(row.vehicle_plate) || null,
       },
     };
   });
@@ -65,7 +67,7 @@ export const lookupViolationsByPlate = createServerFn({ method: "POST" })
   .validator((input: unknown) => plateLookupSchema.parse(input))
   .handler(async ({ data }): Promise<{ tickets: PublicTicket[] }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const vehiclePlate = data.vehiclePlate.toUpperCase().replace(/\s+/g, " ").trim();
+    const vehiclePlate = normalizeVehiclePlate(data.vehiclePlate);
     const { data: rows, error } = await supabaseAdmin
       .from("violations")
       .select(
@@ -81,6 +83,7 @@ export const lookupViolationsByPlate = createServerFn({ method: "POST" })
         ...row,
         fine_amount: Number(row.fine_amount),
         violator_name: maskName(row.violator_name),
+        vehicle_plate: normalizeVehiclePlate(row.vehicle_plate) || null,
       })),
     };
   });

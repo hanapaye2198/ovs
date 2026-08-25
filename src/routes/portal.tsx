@@ -19,7 +19,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { readDemoViolationsByPlate } from "@/lib/demo-lookup";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { normalizeVehiclePlate } from "@/lib/plate";
 import {
   DEMO_CITIZEN,
   DEMO_CITIZEN_PAYMENTS,
@@ -31,6 +33,7 @@ import {
 import {
   getCitizenPayments,
   lookupTicket,
+  lookupViolationsByPlate,
   type CitizenPayment,
   type PublicTicket,
 } from "@/lib/ovs.functions";
@@ -584,8 +587,12 @@ function CitizenDashboard({
 }
 
 function CitizenTicketLookup() {
+  const [lookupMode, setLookupMode] = useState<"ticket" | "plate">("ticket");
   const [ticketNumber, setTicketNumber] = useState("");
+  const [plateNumber, setPlateNumber] = useState("");
+  const [mvFileNumber, setMvFileNumber] = useState("");
   const [ticket, setTicket] = useState<PublicTicket | null>(null);
+  const [plateMatches, setPlateMatches] = useState<PublicTicket[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -593,9 +600,29 @@ function CitizenTicketLookup() {
     event.preventDefault();
     setError("");
     setTicket(null);
+    setPlateMatches([]);
     setBusy(true);
 
     try {
+      if (lookupMode === "plate") {
+        const normalizedPlate = normalizeVehiclePlate(plateNumber);
+        if (!normalizedPlate || !mvFileNumber.trim()) {
+          throw new Error("Enter both the plate number and MV file number to continue.");
+        }
+
+        const matches = DEMO_MODE
+          ? readDemoViolationsByPlate(normalizedPlate)
+          : (await lookupViolationsByPlate({ data: { vehiclePlate: normalizedPlate } })).tickets;
+        if (!matches.length) {
+          throw new Error(
+            "We couldn't find violations for that plate. Check the details and try again.",
+          );
+        }
+        setPlateMatches(matches);
+        setTicket(matches[0] ?? null);
+        return;
+      }
+
       const normalizedNumber = ticketNumber.trim().toUpperCase();
       if (DEMO_MODE) {
         const demoTicket = DEMO_TICKETS.find((item) => item.ticket_number === normalizedNumber);
@@ -628,27 +655,67 @@ function CitizenTicketLookup() {
             </p>
             <h2 className="mt-2 text-2xl font-semibold">Look up another ticket</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Enter the ticket number exactly as it appears on your citation.
+              Search using the ticket number or the plate and MV file details on your citation.
             </p>
           </div>
           <Search className="hidden size-8 text-primary/40 sm:block" />
         </div>
-        <form onSubmit={handleLookup} className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <Input
-            value={ticketNumber}
-            onChange={(event) => setTicketNumber(event.target.value)}
-            placeholder="OVS-2026-000101"
-            className="bg-background font-mono"
-            aria-label="Ticket number"
-            required
-          />
+        <div className="mt-5 flex rounded-lg bg-background p-1">
+          {(["ticket", "plate"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => {
+                setLookupMode(mode);
+                setError("");
+                setTicket(null);
+                setPlateMatches([]);
+              }}
+              className={`flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors ${lookupMode === mode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+            >
+              {mode === "ticket" ? "Ticket number" : "Plate number"}
+            </button>
+          ))}
+        </div>
+        <form onSubmit={handleLookup} className="mt-4 flex flex-col gap-3 sm:flex-row">
+          {lookupMode === "ticket" ? (
+            <Input
+              value={ticketNumber}
+              onChange={(event) => setTicketNumber(event.target.value)}
+              placeholder="OVS-2026-000101"
+              className="bg-background font-mono"
+              aria-label="Ticket number"
+              required
+            />
+          ) : (
+            <div className="grid flex-1 gap-3 sm:grid-cols-2">
+              <Input
+                value={plateNumber}
+                onChange={(event) => setPlateNumber(event.target.value.toUpperCase())}
+                placeholder="ABC 1122"
+                className="bg-background font-mono"
+                aria-label="Plate number"
+                required
+              />
+              <Input
+                value={mvFileNumber}
+                onChange={(event) => setMvFileNumber(event.target.value.toUpperCase())}
+                placeholder="MV file number"
+                className="bg-background font-mono"
+                aria-label="MV file number"
+                required
+              />
+            </div>
+          )}
           <Button type="submit" disabled={busy} className="sm:min-w-32">
             <Search /> {busy ? "Searching…" : "Search"}
           </Button>
         </form>
         {DEMO_MODE ? (
           <p className="mt-3 text-xs text-muted-foreground">
-            Demo tickets: OVS-2026-000101, OVS-2026-000102, or OVS-2026-000103.
+            {lookupMode === "ticket"
+              ? "Demo tickets: OVS-2026-000101, OVS-2026-000102, or OVS-2026-000103."
+              : "Demo plate: ABC 1122. The MV file number is required for the lookup flow."}
           </p>
         ) : null}
       </div>
@@ -674,6 +741,12 @@ function CitizenTicketLookup() {
             <p className="mt-1 text-sm text-muted-foreground">
               Issued {formatDate(ticket.issued_at)} · {ticket.location ?? "Location not recorded"}
             </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Plate:{" "}
+              <span className="font-mono font-semibold text-foreground">
+                {ticket.vehicle_plate ?? "Not recorded"}
+              </span>
+            </p>
           </div>
           <div className="flex items-center gap-4 sm:text-right">
             <div>
@@ -687,6 +760,39 @@ function CitizenTicketLookup() {
                 </Link>
               </Button>
             ) : null}
+          </div>
+        </div>
+      ) : null}
+      {plateMatches.length > 1 ? (
+        <div className="border-t border-border p-6">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-text">
+                Plate records
+              </p>
+              <h3 className="mt-1 text-lg font-semibold">
+                All records for {plateMatches[0]?.vehicle_plate}
+              </h3>
+            </div>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {plateMatches.length} matches
+            </span>
+          </div>
+          <div className="mt-4 space-y-2">
+            {plateMatches.slice(1).map((match) => (
+              <div
+                key={match.ticket_number}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-secondary/45 px-4 py-3 text-sm"
+              >
+                <span>
+                  <span className="font-mono font-semibold text-primary">
+                    {match.ticket_number}
+                  </span>
+                  <span className="ml-3">{match.violation_type}</span>
+                </span>
+                <span className="font-medium">{formatCurrency(match.fine_amount)}</span>
+              </div>
+            ))}
           </div>
         </div>
       ) : null}
@@ -723,6 +829,7 @@ function CitizenViolationList({ tickets }: { tickets: PublicTicket[] }) {
               <thead className="bg-secondary/25 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-6 py-3 font-semibold">Ticket</th>
+                  <th className="px-6 py-3 font-semibold">Plate</th>
                   <th className="px-6 py-3 font-semibold">Violation</th>
                   <th className="px-6 py-3 font-semibold">Issued</th>
                   <th className="px-6 py-3 font-semibold">Amount</th>
@@ -751,6 +858,12 @@ function CitizenViolationList({ tickets }: { tickets: PublicTicket[] }) {
                   <CitizenTicketStatus status={ticket.status} />
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Plate</p>
+                    <p className="mt-1 font-mono font-medium">
+                      {ticket.vehicle_plate ?? "Not recorded"}
+                    </p>
+                  </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Issued</p>
                     <p className="mt-1 font-medium">{formatDate(ticket.issued_at)}</p>
@@ -784,6 +897,9 @@ function CitizenViolationRow({ ticket }: { ticket: PublicTicket }) {
     <tr className="hover:bg-secondary/20">
       <td className="px-6 py-4 font-mono text-xs font-semibold text-primary">
         {ticket.ticket_number}
+      </td>
+      <td className="px-6 py-4 font-mono text-xs font-medium">
+        {ticket.vehicle_plate ?? "Not recorded"}
       </td>
       <td className="px-6 py-4">
         <p className="font-medium">{ticket.violation_type}</p>
