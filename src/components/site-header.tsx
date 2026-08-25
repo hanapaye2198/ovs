@@ -76,9 +76,12 @@ export function SiteHeader() {
           <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-0.5 shadow-sm ring-1 ring-border">
             <img src={tagumCitySeal} alt="Tagum City seal" className="size-full object-contain" />
           </span>
-          <span className="leading-tight">
+          <span className="max-w-[230px] leading-tight">
             <span className="block font-display text-lg font-semibold tracking-tight">NCAS</span>
-            <span className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.1em] text-primary">
+              Tagum City Traffic Management Office
+            </span>
+            <span className="block text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
               Non Contact Apprehension System
             </span>
           </span>

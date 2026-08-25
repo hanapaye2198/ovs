@@ -79,13 +79,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Non Contact Apprehension System" },
+      { title: "Tagum City Traffic Management Office | NCAS" },
       {
         name: "description",
-        content: "Non Contact Apprehension System for digital violation ticketing and settlement.",
+        content:
+          "Tagum City Traffic Management Office digital violation ticketing and settlement system.",
       },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Non Contact Apprehension System" },
+      { property: "og:title", content: "Tagum City Traffic Management Office | NCAS" },
       {
         property: "og:description",
         content: "Digital violation ticketing and settlement for local government units.",

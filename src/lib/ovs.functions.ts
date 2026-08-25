@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const lookupSchema = z.object({ ticketNumber: z.string().trim().min(4).max(40) });
+const plateLookupSchema = z.object({ vehiclePlate: z.string().trim().min(2).max(20) });
 
 const paySchema = z.object({
   ticketNumber: z.string().trim().min(4).max(40),
@@ -56,6 +57,31 @@ export const lookupTicket = createServerFn({ method: "POST" })
         fine_amount: Number(row.fine_amount),
         violator_name: maskName(row.violator_name),
       },
+    };
+  });
+
+/** Public: returns all violation records matching an exact vehicle plate. */
+export const lookupViolationsByPlate = createServerFn({ method: "POST" })
+  .validator((input: unknown) => plateLookupSchema.parse(input))
+  .handler(async ({ data }): Promise<{ tickets: PublicTicket[] }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const vehiclePlate = data.vehiclePlate.toUpperCase().replace(/\s+/g, " ").trim();
+    const { data: rows, error } = await supabaseAdmin
+      .from("violations")
+      .select(
+        "ticket_number, violator_name, violation_type, ordinance_code, fine_amount, location, issued_at, status, vehicle_plate",
+      )
+      .eq("vehicle_plate", vehiclePlate)
+      .order("issued_at", { ascending: false });
+
+    if (error) throw new Error("Unable to look up that plate right now.");
+
+    return {
+      tickets: (rows ?? []).map((row) => ({
+        ...row,
+        fine_amount: Number(row.fine_amount),
+        violator_name: maskName(row.violator_name),
+      })),
     };
   });
 

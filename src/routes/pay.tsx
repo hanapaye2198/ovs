@@ -4,6 +4,43 @@ import { ArrowLeft, Check, CheckCircle2, Megaphone, ShieldCheck } from "lucide-r
 
 import trafficImage from "@/assets/edsa-traffic-xl-f14437c9.png";
 import tagumCityLogo from "@/assets/tagum-city-seal.png";
+import { DEMO_MODE, DEMO_VIOLATIONS, DEMO_VIOLATIONS_STORAGE_KEY } from "@/lib/demo-data";
+import { formatCurrency, formatDate } from "@/lib/format";
+import { lookupViolationsByPlate, type PublicTicket } from "@/lib/ovs.functions";
+
+function readDemoPlateTickets(vehiclePlate: string): PublicTicket[] {
+  const normalizedPlate = vehiclePlate.toUpperCase().replace(/\s+/g, " ").trim();
+  let records = DEMO_VIOLATIONS;
+
+  if (typeof window !== "undefined") {
+    const stored = window.localStorage.getItem(DEMO_VIOLATIONS_STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed: unknown = JSON.parse(stored);
+        if (Array.isArray(parsed)) records = parsed as typeof DEMO_VIOLATIONS;
+      } catch {
+        records = DEMO_VIOLATIONS;
+      }
+    }
+  }
+
+  return records
+    .filter(
+      (record) =>
+        record.vehicle_plate?.toUpperCase().replace(/\s+/g, " ").trim() === normalizedPlate,
+    )
+    .map((record) => ({
+      ticket_number: record.ticket_number,
+      violator_name: record.violator_name,
+      violation_type: record.violation_type,
+      ordinance_code: record.ordinance_code,
+      fine_amount: Number(record.fine_amount),
+      location: record.location,
+      issued_at: record.issued_at,
+      status: record.status,
+      vehicle_plate: record.vehicle_plate,
+    }));
+}
 
 export const Route = createFileRoute("/pay")({
   head: () => ({
@@ -22,19 +59,55 @@ export const Route = createFileRoute("/pay")({
 function Pay() {
   const [plateNumber, setPlateNumber] = useState("");
   const [mvFileNumber, setMvFileNumber] = useState("");
-  const [lookupMessage, setLookupMessage] = useState<string | null>(null);
+  const [lookupMessage, setLookupMessage] = useState<{
+    tone: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [matches, setMatches] = useState<PublicTicket[]>([]);
+  const [isChecking, setIsChecking] = useState(false);
 
-  function handleLookup(event: FormEvent<HTMLFormElement>) {
+  async function handleLookup(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!plateNumber.trim() || !mvFileNumber.trim()) {
-      setLookupMessage("Enter both your plate number and MV file number to continue.");
+      setMatches([]);
+      setLookupMessage({
+        tone: "error",
+        text: "Enter both your plate number and MV file number to continue.",
+      });
       return;
     }
 
-    setLookupMessage(
-      `Demo lookup received for ${plateNumber.trim().toUpperCase()}. Results stay inside this NCAS demo.`,
-    );
+    setIsChecking(true);
+    setLookupMessage(null);
+    setMatches([]);
+
+    try {
+      const normalizedPlate = plateNumber.toUpperCase().replace(/\s+/g, " ").trim();
+      const tickets = DEMO_MODE
+        ? readDemoPlateTickets(normalizedPlate)
+        : (await lookupViolationsByPlate({ data: { vehiclePlate: normalizedPlate } })).tickets;
+
+      setMatches(tickets);
+      setLookupMessage(
+        tickets.length
+          ? {
+              tone: "success",
+              text: `${tickets.length} violation record${tickets.length === 1 ? "" : "s"} found for ${normalizedPlate}.`,
+            }
+          : {
+              tone: "error",
+              text: `No violation records found for ${normalizedPlate}. Check the plate number and try again.`,
+            },
+      );
+    } catch (cause) {
+      setLookupMessage({
+        tone: "error",
+        text: cause instanceof Error ? cause.message : "Unable to complete the plate lookup.",
+      });
+    } finally {
+      setIsChecking(false);
+    }
   }
 
   return (
@@ -73,7 +146,7 @@ function Pay() {
             </div>
 
             <form
-              id="may-huli-ka-form"
+              id="tctmo-lookup-form"
               onSubmit={handleLookup}
               className="relative z-10 mt-6 w-full max-w-[540px] rounded-2xl border border-border bg-card p-5 shadow-lift sm:mt-5 sm:p-6"
             >
@@ -88,6 +161,7 @@ function Pay() {
                   onChange={(event) => {
                     setPlateNumber(event.target.value.toUpperCase());
                     setLookupMessage(null);
+                    setMatches([]);
                   }}
                   placeholder="PLATE NUMBER"
                   autoComplete="off"
@@ -112,6 +186,7 @@ function Pay() {
                   onChange={(event) => {
                     setMvFileNumber(event.target.value.toUpperCase());
                     setLookupMessage(null);
+                    setMatches([]);
                   }}
                   placeholder="MV FILE NO."
                   autoComplete="off"
@@ -136,10 +211,11 @@ function Pay() {
 
             <button
               type="submit"
-              form="may-huli-ka-form"
-              className="relative z-10 mt-5 flex min-h-14 w-full max-w-[540px] items-center justify-center rounded-xl bg-primary/75 px-6 text-base font-semibold text-primary-foreground shadow-lg backdrop-blur-sm transition-colors hover:bg-primary sm:min-h-16 sm:text-lg"
+              form="tctmo-lookup-form"
+              disabled={isChecking}
+              className="relative z-10 mt-5 flex min-h-14 w-full max-w-[540px] items-center justify-center rounded-xl bg-primary/75 px-6 text-base font-semibold text-primary-foreground shadow-lg backdrop-blur-sm transition-colors hover:bg-primary disabled:cursor-wait disabled:opacity-70 sm:min-h-16 sm:text-lg"
             >
-              CHECK / PAY MY FINE
+              {isChecking ? "CHECKING RECORDS..." : "CHECK / PAY MY FINE"}
             </button>
 
             <div
@@ -148,23 +224,58 @@ function Pay() {
             >
               {lookupMessage && (
                 <div
-                  className={`rounded-lg border px-4 py-2 text-xs font-medium sm:text-sm ${
-                    lookupMessage.startsWith("Demo")
-                      ? "border-success/30 bg-success/15 text-foreground"
-                      : "border-destructive/30 bg-destructive/10 text-foreground"
-                  }`}
+                  className={`rounded-lg border px-4 py-2 text-xs font-medium sm:text-sm ${lookupMessage.tone === "success" ? "border-success/30 bg-success/15 text-foreground" : "border-destructive/30 bg-destructive/10 text-foreground"}`}
                 >
-                  {lookupMessage.startsWith("Demo") && (
+                  {lookupMessage.tone === "success" && (
                     <CheckCircle2 className="mr-1 inline size-4" />
                   )}
-                  {lookupMessage}
+                  {lookupMessage.text}
                 </div>
               )}
             </div>
 
-            <p className="relative z-10 mt-3 text-center text-xs font-semibold text-primary">
-              Demo results stay inside the NCAS workspace.
-            </p>
+            {matches.length > 0 && (
+              <div className="relative z-10 mt-4 w-full max-w-[540px] space-y-3 text-left">
+                {matches.map((ticket) => (
+                  <article
+                    key={ticket.ticket_number}
+                    className="rounded-xl border border-border bg-card p-4 shadow-panel sm:p-5"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-mono text-xs font-semibold text-primary">
+                          {ticket.ticket_number}
+                        </p>
+                        <h2 className="mt-1 text-base font-semibold">{ticket.violation_type}</h2>
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${ticket.status === "paid" ? "bg-success/15 text-success" : "bg-accent/25 text-accent-foreground"}`}
+                      >
+                        {ticket.status}
+                      </span>
+                    </div>
+                    <div className="mt-4 grid gap-3 border-t border-border pt-3 text-xs sm:grid-cols-3">
+                      <div>
+                        <p className="text-muted-foreground">Amount</p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {formatCurrency(ticket.fine_amount)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Issued</p>
+                        <p className="mt-1 text-sm font-medium">{formatDate(ticket.issued_at)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Location</p>
+                        <p className="mt-1 text-sm font-medium">
+                          {ticket.location ?? "Not recorded"}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
 
             <span
               role="img"

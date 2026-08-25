@@ -11,7 +11,9 @@ export function SiteFooter() {
             <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-0.5 shadow-sm ring-1 ring-border">
               <img src={tagumCitySeal} alt="Tagum City seal" className="size-full object-contain" />
             </span>
-            <span className="font-display text-lg font-semibold">Surepay Technologies Inc.</span>
+            <span className="font-display text-lg font-semibold">
+              Tagum City Traffic Management Office
+            </span>
           </div>
           <p className="mt-4 max-w-sm text-sm text-muted-foreground">
             The Non Contact Apprehension System is an automated violation ticketing platform for
