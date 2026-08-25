@@ -57,6 +57,13 @@ export const Route = createFileRoute("/dashboard")({
 type Violation = Tables<"violations">;
 type Payment = Tables<"payments">;
 type AppRole = Database["public"]["Enums"]["app_role"];
+type TrendPoint = {
+  key: string;
+  label: string;
+  tickets: number;
+  paid: number;
+  collected: number;
+};
 
 const emptyForm = {
   ticketNumber: "",
@@ -120,6 +127,11 @@ function readDemoRows<T>(key: string, fallback: T[]) {
 
 function writeDemoRows<T>(key: string, rows: T[]) {
   window.localStorage.setItem(key, JSON.stringify(rows));
+}
+
+function toUtcDay(value: string | null | undefined) {
+  const timestamp = Date.parse(value ?? "");
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString().slice(0, 10) : null;
 }
 
 function Dashboard() {
@@ -278,6 +290,38 @@ function Dashboard() {
       outstanding: unpaid.reduce((total, item) => total + Number(item.fine_amount), 0),
     };
   }, [violations]);
+
+  const trends = useMemo<TrendPoint[]>(() => {
+    const timestamps = [
+      ...violations.map((item) => Date.parse(item.issued_at)),
+      ...payments.map((item) => Date.parse(item.paid_at)),
+    ].filter((timestamp) => Number.isFinite(timestamp));
+    const latestTimestamp = timestamps.length ? Math.max(...timestamps) : Date.now();
+    const endDate = new Date(latestTimestamp);
+    endDate.setUTCHours(0, 0, 0, 0);
+    const labelFormatter = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    });
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(endDate);
+      date.setUTCDate(endDate.getUTCDate() - (6 - index));
+      const key = date.toISOString().slice(0, 10);
+      const dayPayments = payments.filter(
+        (payment) => toUtcDay(payment.paid_at) === key && payment.status === "completed",
+      );
+
+      return {
+        key,
+        label: labelFormatter.format(date),
+        tickets: violations.filter((violation) => toUtcDay(violation.issued_at) === key).length,
+        paid: dayPayments.length,
+        collected: dayPayments.reduce((total, payment) => total + Number(payment.amount), 0),
+      };
+    });
+  }, [payments, violations]);
 
   async function handleSignOut() {
     if (DEMO_MODE) {
@@ -629,6 +673,8 @@ function Dashboard() {
         onAdd={() => setShowAdd(true)}
       />
 
+      <TrendPanel trends={trends} />
+
       <section className="mt-8 grid gap-6 xl:grid-cols-[1fr_0.37fr]">
         <div className="surface-panel overflow-hidden">
           <div className="flex flex-col gap-4 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -730,6 +776,151 @@ function Dashboard() {
       </section>
 
       <PaymentHistory payments={payments} violations={violations} />
+    </div>
+  );
+}
+
+function TrendPanel({ trends }: { trends: TrendPoint[] }) {
+  const activityMax = Math.max(1, ...trends.map((point) => Math.max(point.tickets, point.paid)));
+  const collectionMax = Math.max(1, ...trends.map((point) => point.collected));
+  const summary = trends.reduce(
+    (totals, point) => ({
+      tickets: totals.tickets + point.tickets,
+      paid: totals.paid + point.paid,
+      collected: totals.collected + point.collected,
+    }),
+    { tickets: 0, paid: 0, collected: 0 },
+  );
+  const collectionRate = summary.tickets ? Math.round((summary.paid / summary.tickets) * 100) : 0;
+
+  return (
+    <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+      <div className="surface-panel min-w-0 p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 items-center justify-center rounded-lg bg-secondary text-primary">
+                <TrendingUp className="size-5" />
+              </span>
+              <div>
+                <h2 className="text-xl font-semibold">Violation and collection trends</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Seven-day activity from encoded tickets and completed payments.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-2.5 rounded-full bg-primary" /> Tickets
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="size-2.5 rounded-full bg-success" /> Paid
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="mt-8 grid grid-cols-7 gap-2 sm:gap-4"
+          aria-label="Seven-day violation trend"
+        >
+          {trends.map((point) => {
+            const ticketHeight = point.tickets
+              ? Math.max(12, (point.tickets / activityMax) * 100)
+              : 0;
+            const paidHeight = point.paid ? Math.max(12, (point.paid / activityMax) * 100) : 0;
+
+            return (
+              <div key={point.key} className="min-w-0 text-center">
+                <div className="flex h-44 items-end justify-center gap-1 border-b border-border pb-2">
+                  <div
+                    className="w-1/2 max-w-5 rounded-t bg-primary/80 transition-all"
+                    style={{ height: `${ticketHeight}%` }}
+                    title={`${point.tickets} ticket${point.tickets === 1 ? "" : "s"}`}
+                  />
+                  <div
+                    className="w-1/2 max-w-5 rounded-t bg-success transition-all"
+                    style={{ height: `${paidHeight}%` }}
+                    title={`${point.paid} paid payment${point.paid === 1 ? "" : "s"}`}
+                  />
+                </div>
+                <p className="mt-2 truncate text-[11px] font-medium text-muted-foreground">
+                  {point.label}
+                </p>
+                <p className="mt-1 text-xs font-semibold">
+                  {point.tickets} <span className="text-muted-foreground">/ {point.paid}</span>
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-xs text-muted-foreground">Tickets / completed payments</p>
+      </div>
+
+      <div className="surface-panel p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold">Collection pulse</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Last seven days at a glance.</p>
+          </div>
+          <Badge variant="secondary">{collectionRate}% settled</Badge>
+        </div>
+        <div className="mt-7 space-y-5">
+          <TrendMetric
+            label="Tickets issued"
+            value={String(summary.tickets)}
+            percent={summary.tickets ? 100 : 0}
+          />
+          <TrendMetric
+            label="Payments completed"
+            value={String(summary.paid)}
+            percent={summary.tickets ? Math.min(100, (summary.paid / summary.tickets) * 100) : 0}
+            tone="success"
+          />
+          <TrendMetric
+            label="Collected"
+            value={formatCurrency(summary.collected)}
+            percent={(summary.collected / collectionMax) * 100}
+            tone="accent"
+          />
+        </div>
+        <div className="mt-7 rounded-lg bg-secondary/60 p-4 text-sm">
+          <p className="font-semibold">Demo data stays live</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Add, edit, or delete a ticket and the trend bars and collection summary update with it.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TrendMetric({
+  label,
+  value,
+  percent,
+  tone = "primary",
+}: {
+  label: string;
+  value: string;
+  percent: number;
+  tone?: "primary" | "success" | "accent";
+}) {
+  const barClass =
+    tone === "success" ? "bg-success" : tone === "accent" ? "bg-accent" : "bg-primary";
+
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-semibold">{value}</span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
+        <div
+          className={`h-full rounded-full transition-all ${barClass}`}
+          style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+        />
+      </div>
     </div>
   );
 }
