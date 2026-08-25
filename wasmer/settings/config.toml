@@ -3,5 +3,13 @@ host = "::"
 port = 8080
 root = "/public"
 compression = true
+cache-control-headers = true
 page-fallback = "/index.html"
 log-level = "error"
+
+[advanced]
+
+[[advanced.headers]]
+source = "*.html"
+[advanced.headers.headers]
+Cache-Control = "no-cache"

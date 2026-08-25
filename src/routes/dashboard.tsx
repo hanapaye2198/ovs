@@ -19,7 +19,7 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -132,6 +132,22 @@ function writeDemoRows<T>(key: string, rows: T[]) {
 function toUtcDay(value: string | null | undefined) {
   const timestamp = Date.parse(value ?? "");
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString().slice(0, 10) : null;
+}
+
+function readViolationDraft(formElement: HTMLFormElement): typeof emptyForm {
+  const data = new FormData(formElement);
+  const read = (key: string) => String(data.get(key) ?? "");
+  return {
+    ticketNumber: read("ticketNumber"),
+    violatorName: read("violatorName"),
+    violationType: read("violationType"),
+    ordinanceCode: read("ordinanceCode"),
+    fineAmount: read("fineAmount"),
+    location: read("location"),
+    vehiclePlate: read("vehiclePlate"),
+    officer: read("officer"),
+    status: read("status") as Violation["status"],
+  };
 }
 
 function Dashboard() {
@@ -381,8 +397,7 @@ function Dashboard() {
     setBusy(false);
   }
 
-  async function handleAddViolation(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleAddViolation(draft: typeof emptyForm) {
     setBusy(true);
     setError("");
     setNotice("");
@@ -391,19 +406,19 @@ function Dashboard() {
       const now = new Date().toISOString();
       const demoViolation: Violation = {
         id: `demo-violation-${Date.now()}`,
-        ticket_number: form.ticketNumber.trim().toUpperCase(),
-        violator_name: form.violatorName.trim(),
+        ticket_number: draft.ticketNumber.trim().toUpperCase(),
+        violator_name: draft.violatorName.trim(),
         address: null,
         license_number: null,
-        vehicle_plate: form.vehiclePlate.trim() || null,
-        violation_type: form.violationType.trim(),
-        ordinance_code: form.ordinanceCode.trim() || null,
-        fine_amount: Number(form.fineAmount),
-        location: form.location.trim() || null,
+        vehicle_plate: draft.vehiclePlate.trim() || null,
+        violation_type: draft.violationType.trim(),
+        ordinance_code: draft.ordinanceCode.trim() || null,
+        fine_amount: Number(draft.fineAmount),
+        location: draft.location.trim() || null,
         issued_at: now,
-        officer: form.officer.trim() || null,
+        officer: draft.officer.trim() || null,
         remarks: null,
-        status: form.status,
+        status: draft.status,
         created_by: "demo-staff",
         created_at: now,
         updated_at: now,
@@ -419,14 +434,14 @@ function Dashboard() {
     }
 
     const { error: insertError } = await supabase.from("violations").insert({
-      ticket_number: form.ticketNumber.trim().toUpperCase(),
-      violator_name: form.violatorName.trim(),
-      violation_type: form.violationType.trim(),
-      ordinance_code: form.ordinanceCode.trim() || null,
-      fine_amount: Number(form.fineAmount),
-      location: form.location.trim() || null,
-      vehicle_plate: form.vehiclePlate.trim() || null,
-      officer: form.officer.trim() || null,
+      ticket_number: draft.ticketNumber.trim().toUpperCase(),
+      violator_name: draft.violatorName.trim(),
+      violation_type: draft.violationType.trim(),
+      ordinance_code: draft.ordinanceCode.trim() || null,
+      fine_amount: Number(draft.fineAmount),
+      location: draft.location.trim() || null,
+      vehicle_plate: draft.vehiclePlate.trim() || null,
+      officer: draft.officer.trim() || null,
       created_by: userId,
     });
 
@@ -441,22 +456,21 @@ function Dashboard() {
     setBusy(false);
   }
 
-  async function handleSaveViolation(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSaveViolation(draft: typeof emptyForm) {
     setBusy(true);
     setError("");
     setNotice("");
 
     const payload = {
-      ticket_number: form.ticketNumber.trim().toUpperCase(),
-      violator_name: form.violatorName.trim(),
-      violation_type: form.violationType.trim(),
-      ordinance_code: form.ordinanceCode.trim() || null,
-      fine_amount: Number(form.fineAmount),
-      location: form.location.trim() || null,
-      vehicle_plate: form.vehiclePlate.trim() || null,
-      officer: form.officer.trim() || null,
-      status: form.status,
+      ticket_number: draft.ticketNumber.trim().toUpperCase(),
+      violator_name: draft.violatorName.trim(),
+      violation_type: draft.violationType.trim(),
+      ordinance_code: draft.ordinanceCode.trim() || null,
+      fine_amount: Number(draft.fineAmount),
+      location: draft.location.trim() || null,
+      vehicle_plate: draft.vehiclePlate.trim() || null,
+      officer: draft.officer.trim() || null,
+      status: draft.status,
     };
 
     if (DEMO_MODE && editingViolation) {
@@ -763,8 +777,8 @@ function Dashboard() {
 
         {showAdd ? (
           <AddViolationForm
+            key={editingViolation?.id ?? "new"}
             form={form}
-            setForm={setForm}
             onSubmit={editingViolation ? handleSaveViolation : handleAddViolation}
             onClose={closeEditor}
             busy={busy}
@@ -1272,21 +1286,17 @@ function GuideStep({
 
 function AddViolationForm({
   form,
-  setForm,
   onSubmit,
   onClose,
   busy,
   editing,
 }: {
   form: typeof emptyForm;
-  setForm: React.Dispatch<React.SetStateAction<typeof emptyForm>>;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (draft: typeof emptyForm) => void;
   onClose: () => void;
   busy: boolean;
   editing: boolean;
 }) {
-  const update = (key: keyof typeof emptyForm, value: string) =>
-    setForm((current) => ({ ...current, [key]: value }));
   return (
     <aside className="surface-panel h-fit p-6">
       <div className="flex items-start justify-between gap-3">
@@ -1307,56 +1317,62 @@ function AddViolationForm({
           ×
         </Button>
       </div>
-      <form onSubmit={onSubmit} className="mt-6 space-y-3">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit(readViolationDraft(event.currentTarget));
+        }}
+        className="mt-6 space-y-3"
+      >
         <Field
           id="new-ticket"
+          name="ticketNumber"
           label="Ticket number"
           value={form.ticketNumber}
-          onChange={(value) => update("ticketNumber", value)}
           placeholder="OVS-2026-000109"
           required
         />
         <Field
           id="new-name"
+          name="violatorName"
           label="Violator name"
           value={form.violatorName}
-          onChange={(value) => update("violatorName", value)}
           placeholder="Full name"
           required
         />
         <Field
           id="new-violation"
+          name="violationType"
           label="Violation type"
           value={form.violationType}
-          onChange={(value) => update("violationType", value)}
           placeholder="e.g. Illegal parking"
           required
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field
             id="new-ordinance"
+            name="ordinanceCode"
             label="Ordinance"
             value={form.ordinanceCode}
-            onChange={(value) => update("ordinanceCode", value)}
             placeholder="Ord. 0000"
           />
           <Field
             id="new-fine"
+            name="fineAmount"
             label="Fine (PHP)"
             type="number"
             min="0"
             step="0.01"
             value={form.fineAmount}
-            onChange={(value) => update("fineAmount", value)}
             placeholder="500"
             required
           />
         </div>
         <Field
           id="new-location"
+          name="location"
           label="Location"
           value={form.location}
-          onChange={(value) => update("location", value)}
           placeholder="Where it was issued"
         />
         <div className="space-y-1.5">
@@ -1365,8 +1381,8 @@ function AddViolationForm({
           </Label>
           <select
             id="new-status"
-            value={form.status}
-            onChange={(event) => update("status", event.target.value as Violation["status"])}
+            name="status"
+            defaultValue={form.status}
             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <option value="unpaid">Unpaid</option>
@@ -1378,16 +1394,16 @@ function AddViolationForm({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field
             id="new-plate"
+            name="vehiclePlate"
             label="Vehicle plate"
             value={form.vehiclePlate}
-            onChange={(value) => update("vehiclePlate", value)}
             placeholder="ABC 1234"
           />
           <Field
             id="new-officer"
+            name="officer"
             label="Officer"
             value={form.officer}
-            onChange={(value) => update("officer", value)}
             placeholder="Officer name"
           />
         </div>
@@ -1480,6 +1496,7 @@ function PaymentHistory({
 
 function Field({
   id,
+  name,
   label,
   value,
   onChange,
@@ -1490,9 +1507,10 @@ function Field({
   step,
 }: {
   id: string;
+  name?: string;
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   placeholder?: string;
   type?: string;
   required?: boolean;
@@ -1506,11 +1524,12 @@ function Field({
       </Label>
       <Input
         id={id}
+        name={name}
         type={type}
         min={min}
         step={step}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
+        defaultValue={value}
+        onChange={onChange ? (event) => onChange(event.target.value) : undefined}
         placeholder={placeholder}
         required={required}
       />
