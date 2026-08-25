@@ -1,4 +1,4 @@
 kind: wasmer.io/App.v0
-name: ovs-demo
+name: non-contact-apprehension-system
 owner: kikoy12345amaba
 package: .
