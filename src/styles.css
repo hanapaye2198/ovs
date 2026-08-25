@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * OVS design system — civic fintech.
+ * NCAS design system — civic fintech.
  * Deep navy authority + warm amber accent on a warm paper neutral.
  * All colors are oklch semantic tokens. Never hardcode colors in components.
  */

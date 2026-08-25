@@ -13,8 +13,8 @@ export function SiteFooter() {
             <span className="font-display text-lg font-semibold">Surepay Technologies Inc.</span>
           </div>
           <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-            The Ordinance Violation System is an automated violation ticketing platform for local
-            government units, integrated with an administrative portal and a payment gateway
+            The Non Contact Apprehension System is an automated violation ticketing platform for
+            local government units, integrated with an administrative portal and a payment gateway
             interface.
           </p>
         </div>

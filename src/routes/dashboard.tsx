@@ -43,11 +43,11 @@ import type { Database, Tables } from "@/integrations/supabase/types";
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "LGU Dashboard | OVS" },
+      { title: "LGU Dashboard | NCAS" },
       {
         name: "description",
         content:
-          "Review ordinance violations, payments, and ticket trends from the OVS LGU dashboard.",
+          "Review ordinance violations, payments, and ticket trends from the NCAS LGU dashboard.",
       },
     ],
   }),
@@ -89,7 +89,7 @@ const rolePageContent: Record<
 > = {
   admin: {
     eyebrow: "Administrator workspace",
-    title: "Control the whole OVS operation.",
+    title: "Control the whole NCAS operation.",
     description: "Review collections, manage violation records, and keep staff access organized.",
     workspaceTitle: "Administrative control center",
     workspaceText: "This role can manage records and oversee every staff workspace in the demo.",

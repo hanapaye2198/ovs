@@ -26,7 +26,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 export const Route = createFileRoute("/pay")({
   head: () => ({
     meta: [
-      { title: "Pay a Ticket | OVS" },
+      { title: "Pay a Ticket | NCAS" },
       {
         name: "description",
         content:
@@ -137,7 +137,7 @@ function Pay() {
           to="/"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="size-4" /> Back to OVS
+          <ArrowLeft className="size-4" /> Back to NCAS
         </Link>
 
         <div className="mt-8 text-center">

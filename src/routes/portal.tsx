@@ -39,11 +39,11 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/portal")({
   head: () => ({
     meta: [
-      { title: "Citizen Portal | OVS" },
+      { title: "Citizen Portal | NCAS" },
       {
         name: "description",
         content:
-          "Create a citizen portal account, manage your OVS profile, and settle ordinance violation tickets online.",
+          "Create a citizen portal account, manage your NCAS profile, and settle ordinance violation tickets online.",
       },
     ],
   }),
@@ -108,7 +108,7 @@ function Portal() {
 
       setUser({
         email: authUser.email ?? "",
-        fullName: profileName || "OVS citizen",
+        fullName: profileName || "NCAS citizen",
         createdAt: authUser.created_at,
       });
     },
@@ -266,7 +266,7 @@ function Portal() {
           Your tickets, easier to manage.
         </h1>
         <p className="mt-5 max-w-xl text-muted-foreground">
-          Create an OVS account for a smoother citizen experience, then move from ticket lookup to
+          Create an NCAS account for a smoother citizen experience, then move from ticket lookup to
           secure online payment whenever it is convenient.
         </p>
 

@@ -22,11 +22,11 @@ import { DEMO_MODE } from "@/lib/demo-data";
 export const Route = createFileRoute("/support")({
   head: () => ({
     meta: [
-      { title: "Customer Support | OVS" },
+      { title: "Customer Support | NCAS" },
       {
         name: "description",
         content:
-          "Get help with OVS ticket lookup, payment receipts, citizen accounts, and LGU portal access.",
+          "Get help with NCAS ticket lookup, payment receipts, citizen accounts, and LGU portal access.",
       },
     ],
   }),
@@ -36,7 +36,7 @@ export const Route = createFileRoute("/support")({
 const supportTopics = [
   {
     title: "I cannot find my ticket",
-    text: "Check that the ticket number matches the citation, including the OVS prefix and dashes.",
+    text: "Check that the ticket number matches the citation, including the OVS ticket prefix and dashes.",
   },
   {
     title: "I need a payment receipt",
@@ -44,7 +44,7 @@ const supportTopics = [
   },
   {
     title: "I am an LGU staff member",
-    text: "For account or role issues, contact the LGU administrator or the OVS business operations team.",
+    text: "For account or role issues, contact the LGU administrator or the NCAS business operations team.",
   },
 ];
 
@@ -62,7 +62,7 @@ function Support() {
       setSubmitted(true);
       return;
     }
-    const subject = encodeURIComponent(`[OVS Support] ${topic}`);
+    const subject = encodeURIComponent(`[NCAS Support] ${topic}`);
     const body = encodeURIComponent(
       `Name: ${name}\nEmail: ${email}\nTicket number: ${ticketNumber || "Not provided"}\n\n${message}`,
     );

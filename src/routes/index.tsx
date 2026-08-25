@@ -16,17 +16,17 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "OVS — Ordinance Violation System for LGUs | Surepay" },
+      { title: "Non Contact Apprehension System for LGUs | Surepay" },
       {
         name: "description",
         content:
           "Automated ordinance violation ticketing for local government units. Violators settle tickets online anytime, anywhere, through 40+ payment channels.",
       },
-      { property: "og:title", content: "OVS — Ordinance Violation System for LGUs" },
+      { property: "og:title", content: "Non Contact Apprehension System for LGUs" },
       {
         property: "og:description",
         content:
-          "Automated violation ticketing with an LGU admin portal and an integrated payment gateway by Surepay Technologies Inc.",
+          "Automated non-contact apprehension with an LGU admin portal and an integrated payment gateway by Surepay Technologies Inc.",
       },
     ],
   }),
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/")({
 });
 
 const steps = [
-  { icon: Building2, title: "OVS Website", text: "The violator visits the official OVS portal." },
+  { icon: Building2, title: "NCAS Website", text: "The violator visits the official NCAS portal." },
   {
     icon: FileSearch,
     title: "Violation Details",
@@ -80,9 +80,10 @@ function Home() {
               Ordinance violations, ticketed and settled online.
             </h1>
             <p className="mt-5 max-w-xl text-base/7 text-primary-foreground/80">
-              OVS is an automated violation ticketing system for local government units. Paired with
-              an administrative portal and a payment gateway interface, violators can settle their
-              tickets anytime, anywhere, straight from their phone.
+              The Non Contact Apprehension System is an automated violation ticketing system for
+              local government units. Paired with an administrative portal and a payment gateway
+              interface, violators can settle their tickets anytime, anywhere, straight from their
+              phone.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" variant="secondary">
@@ -188,7 +189,9 @@ function Home() {
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-4 py-16 lg:py-20">
-        <h2 className="text-display text-3xl font-bold sm:text-4xl">Why LGUs adopt OVS</h2>
+        <h2 className="text-display text-3xl font-bold sm:text-4xl">
+          Why LGUs adopt the Non Contact Apprehension System
+        </h2>
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {pitch.map((item) => (
             <article key={item.tag} className="surface-panel flex flex-col p-7">

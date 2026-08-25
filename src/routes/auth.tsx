@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "LGU Staff Login | OVS" },
+      { title: "LGU Staff Login | NCAS" },
       {
         name: "description",
         content:

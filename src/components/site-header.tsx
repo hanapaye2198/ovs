@@ -77,9 +77,9 @@ export function SiteHeader() {
             <ShieldCheck className="size-5" />
           </span>
           <span className="leading-tight">
-            <span className="block font-display text-lg font-semibold tracking-tight">OVS</span>
+            <span className="block font-display text-lg font-semibold tracking-tight">NCAS</span>
             <span className="block text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-              Ordinance Violation System
+              Non Contact Apprehension System
             </span>
           </span>
         </Link>

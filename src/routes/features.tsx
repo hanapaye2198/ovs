@@ -15,16 +15,17 @@ import {
 export const Route = createFileRoute("/features")({
   head: () => ({
     meta: [
-      { title: "OVS Features — Citizen Portal & LGU Dashboard | Surepay" },
+      { title: "NCAS Features — Citizen Portal & LGU Dashboard | Surepay" },
       {
         name: "description",
         content:
           "Mobile-responsive ticket settlement, real-time transaction updates, a comprehensive LGU dashboard, transaction history, and end-to-end access control.",
       },
-      { property: "og:title", content: "OVS Features — Citizen Portal & LGU Dashboard" },
+      { property: "og:title", content: "NCAS Features — Citizen Portal & LGU Dashboard" },
       {
         property: "og:description",
-        content: "What the Ordinance Violation System gives citizens and local government units.",
+        content:
+          "What the Non Contact Apprehension System gives citizens and local government units.",
       },
     ],
   }),
@@ -32,17 +33,49 @@ export const Route = createFileRoute("/features")({
 });
 
 const userFeatures = [
-  { icon: Smartphone, title: "Mobile responsive & accessible", text: "Works on any phone, tablet, or desktop browser." },
-  { icon: RefreshCw, title: "Real-time transaction updates", text: "Ticket status changes the moment payment clears." },
-  { icon: Sparkles, title: "User-friendly interface", text: "Light and easy to navigate, even for the less tech-savvy." },
-  { icon: Wallet, title: "Diverse payment options", text: "Cards, e-wallets, banks, and over-the-counter partners." },
+  {
+    icon: Smartphone,
+    title: "Mobile responsive & accessible",
+    text: "Works on any phone, tablet, or desktop browser.",
+  },
+  {
+    icon: RefreshCw,
+    title: "Real-time transaction updates",
+    text: "Ticket status changes the moment payment clears.",
+  },
+  {
+    icon: Sparkles,
+    title: "User-friendly interface",
+    text: "Light and easy to navigate, even for the less tech-savvy.",
+  },
+  {
+    icon: Wallet,
+    title: "Diverse payment options",
+    text: "Cards, e-wallets, banks, and over-the-counter partners.",
+  },
 ];
 
 const lguFeatures = [
-  { icon: LayoutDashboard, title: "Comprehensive dashboard", text: "Visual snapshot of all violations, key stats, and trends." },
-  { icon: History, title: "Transaction history", text: "Every settlement recorded with channel and reference number." },
-  { icon: Lock, title: "End-to-end access control", text: "Role-based access so only authorized staff can encode or edit." },
-  { icon: Headphones, title: "Customer support", text: "Support for both enforcement staff and paying citizens." },
+  {
+    icon: LayoutDashboard,
+    title: "Comprehensive dashboard",
+    text: "Visual snapshot of all violations, key stats, and trends.",
+  },
+  {
+    icon: History,
+    title: "Transaction history",
+    text: "Every settlement recorded with channel and reference number.",
+  },
+  {
+    icon: Lock,
+    title: "End-to-end access control",
+    text: "Role-based access so only authorized staff can encode or edit.",
+  },
+  {
+    icon: Headphones,
+    title: "Customer support",
+    text: "Support for both enforcement staff and paying citizens.",
+  },
 ];
 
 function Group({
@@ -82,8 +115,8 @@ function Features() {
         Everything the ordinance workflow needs
       </h1>
       <p className="mt-4 max-w-2xl text-muted-foreground">
-        OVS covers the full lifecycle of a citation — from encoding the violation in the field to the
-        electronic receipt in the violator&apos;s inbox.
+        NCAS covers the full lifecycle of a citation — from encoding the violation in the field to
+        the electronic receipt in the violator&apos;s inbox.
       </p>
 
       <div className="mt-12 space-y-14">

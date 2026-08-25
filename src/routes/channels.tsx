@@ -4,16 +4,17 @@ import { Banknote, CreditCard, Landmark, Store } from "lucide-react";
 export const Route = createFileRoute("/channels")({
   head: () => ({
     meta: [
-      { title: "Payment Channels — Cards, E-Wallets, Banks & OTC | OVS" },
+      { title: "Payment Channels — Cards, E-Wallets, Banks & OTC | NCAS" },
       {
         name: "description",
         content:
           "Settle ordinance violation tickets through credit cards, e-wallets like GCash and Maya, major Philippine banks, and over-the-counter partners nationwide.",
       },
-      { property: "og:title", content: "OVS Payment Channels" },
+      { property: "og:title", content: "NCAS Payment Channels" },
       {
         property: "og:description",
-        content: "Cards, e-wallets, banks, and over-the-counter partners for ordinance violation payments.",
+        content:
+          "Cards, e-wallets, banks, and over-the-counter partners for ordinance violation payments.",
       },
     ],
   }),
@@ -29,7 +30,17 @@ export const CHANNEL_GROUPS = [
   {
     icon: Banknote,
     label: "E-wallets",
-    items: ["GCash", "Maya", "GrabPay", "Alipay", "WeChat Pay", "coins.ph", "Dragonpay", "digipay", "Hello Money"],
+    items: [
+      "GCash",
+      "Maya",
+      "GrabPay",
+      "Alipay",
+      "WeChat Pay",
+      "coins.ph",
+      "Dragonpay",
+      "digipay",
+      "Hello Money",
+    ],
   },
   {
     icon: Landmark,
@@ -81,10 +92,12 @@ function Channels() {
       <span className="inline-flex items-center rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
         Payment channels
       </span>
-      <h1 className="text-display mt-5 text-4xl font-bold sm:text-5xl">You can now pay through any channel</h1>
+      <h1 className="text-display mt-5 text-4xl font-bold sm:text-5xl">
+        You can now pay through any channel
+      </h1>
       <p className="mt-4 max-w-2xl text-muted-foreground">
-        Violators pick whatever method they already use — no bank account required, no trip to the city hall
-        cashier.
+        Violators pick whatever method they already use — no bank account required, no trip to the
+        city hall cashier.
       </p>
 
       <div className="mt-12 space-y-6">
@@ -95,7 +108,9 @@ function Channels() {
                 <group.icon className="size-5" />
               </span>
               <h2 className="text-xl font-semibold">{group.label}</h2>
-              <span className="ml-auto font-mono text-xs text-muted-foreground">{group.items.length}</span>
+              <span className="ml-auto font-mono text-xs text-muted-foreground">
+                {group.items.length}
+              </span>
             </div>
             <ul className="mt-5 flex flex-wrap gap-2">
               {group.items.map((item) => (

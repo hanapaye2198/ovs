@@ -1,20 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ExternalLink, Globe2, ShieldCheck } from "lucide-react";
+import { ExternalLink, ShieldCheck } from "lucide-react";
 
 const MAY_HULI_KA_URL = "https://mayhulika.mmda.gov.ph/";
 
 export const Route = createFileRoute("/mayhulika")({
   head: () => ({
     meta: [
-      { title: "May Huli Ka — MMDA Portal | OVS" },
+      { title: "May Huli Ka — MMDA Portal | NCAS" },
       {
         name: "description",
-        content: "Access the MMDA May Huli Ka portal from the Ordinance Violation System.",
+        content: "Access the MMDA May Huli Ka portal from the Non Contact Apprehension System.",
       },
       { property: "og:title", content: "May Huli Ka — MMDA Portal" },
       {
         property: "og:description",
-        content: "A dedicated OVS section for accessing the MMDA May Huli Ka portal.",
+        content: "A dedicated NCAS section for accessing the MMDA May Huli Ka portal.",
       },
     ],
   }),
@@ -24,18 +24,7 @@ export const Route = createFileRoute("/mayhulika")({
 function MayHuliKa() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-10 lg:py-14">
-      <div className="mx-auto max-w-3xl text-center">
-        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-          <Globe2 className="size-3.5" /> Partner service
-        </span>
-        <h1 className="text-display mt-5 text-4xl font-bold sm:text-5xl">May Huli Ka</h1>
-        <p className="mt-4 text-muted-foreground">
-          Access the MMDA May Huli Ka portal in its own dedicated OVS section. The service is
-          operated by the Metropolitan Manila Development Authority.
-        </p>
-      </div>
-
-      <section className="surface-panel mx-auto mt-10 max-w-6xl overflow-hidden">
+      <section className="surface-panel mx-auto max-w-6xl overflow-hidden">
         <div className="flex flex-col gap-5 border-b border-border p-5 sm:flex-row sm:items-end sm:justify-between sm:p-6">
           <div>
             <div className="flex items-center gap-3">
@@ -75,7 +64,7 @@ function MayHuliKa() {
         </div>
 
         <p className="border-t border-border px-5 py-4 text-xs leading-5 text-muted-foreground sm:px-6">
-          This embedded page is provided by mayhulika.mmda.gov.ph. OVS does not collect or store
+          This embedded page is provided by mayhulika.mmda.gov.ph. NCAS does not collect or store
           information entered into the external MMDA service.
         </p>
       </section>
