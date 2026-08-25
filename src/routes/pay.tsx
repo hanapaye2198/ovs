@@ -46,7 +46,7 @@ function Pay() {
         <ArrowLeft className="size-4" /> Back to NCAS
       </Link>
 
-      <section className="surface-panel mx-auto mt-6 max-w-6xl overflow-hidden bg-card sm:mt-8">
+      <section className="tagum-theme surface-panel mx-auto mt-6 max-w-6xl overflow-hidden bg-card sm:mt-8">
         <div className="relative overflow-hidden">
           <div
             className="relative flex min-h-[700px] flex-col items-center overflow-hidden px-4 pb-12 pt-8 sm:min-h-[760px] sm:pt-10"
