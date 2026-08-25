@@ -5,15 +5,6 @@ import { ArrowLeft, Check, CheckCircle2, Megaphone, ShieldCheck } from "lucide-r
 import trafficImage from "@/assets/edsa-traffic-xl-f14437c9.png";
 import tagumCityLogo from "@/assets/tagum-city-seal.png";
 
-const mmdaNavItems = [
-  "PAY MY FINE",
-  "VEHICLE PORTAL",
-  "E-CONTEST",
-  "FAQS",
-  "CONTACT US",
-  "IMPORTANT UPDATES & NEWS!",
-] as const;
-
 export const Route = createFileRoute("/pay")({
   head: () => ({
     meta: [
@@ -57,33 +48,6 @@ function Pay() {
 
       <section className="surface-panel mx-auto mt-6 max-w-6xl overflow-hidden bg-card sm:mt-8">
         <div className="relative overflow-hidden">
-          <nav
-            aria-label="Tagum City Traffic Management Office service navigation"
-            className="relative z-20 flex min-h-20 items-stretch overflow-x-auto bg-primary px-3 text-primary-foreground sm:px-5"
-          >
-            <div className="flex shrink-0 items-center px-3 py-3 sm:px-5">
-              <img
-                src={tagumCityLogo}
-                alt="Tagum City Traffic Management Office"
-                className="size-12 object-contain sm:size-14"
-              />
-            </div>
-
-            <div className="flex min-w-max items-stretch">
-              {mmdaNavItems.map((item) => (
-                <span
-                  key={item}
-                  className="flex items-center px-3 text-center text-[10px] font-bold leading-tight sm:px-4 sm:text-xs"
-                >
-                  {item}
-                </span>
-              ))}
-              <span className="flex shrink-0 items-center bg-destructive px-4 text-center text-[10px] font-bold leading-tight text-destructive-foreground sm:px-5 sm:text-xs">
-                CHECK FOR VIOLATIONS
-              </span>
-            </div>
-          </nav>
-
           <div
             className="relative flex min-h-[700px] flex-col items-center overflow-hidden px-4 pb-12 pt-8 sm:min-h-[760px] sm:pt-10"
             style={{
