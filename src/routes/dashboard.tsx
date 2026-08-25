@@ -537,6 +537,25 @@ function Dashboard() {
     setForm(emptyForm);
   }
 
+  function openNewViolation() {
+    setEditingViolation(null);
+    setForm(emptyForm);
+    setShowAdd(true);
+  }
+
+  useEffect(() => {
+    if (!showAdd) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("add-violation-form")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [editingViolation?.id, showAdd]);
+
   const canManage = role === "admin" || role === "encoder";
   const activeRole = role ?? "viewer";
   const rolePage = rolePageContent[activeRole];
@@ -684,7 +703,7 @@ function Dashboard() {
         role={activeRole}
         title={rolePage.workspaceTitle}
         text={rolePage.workspaceText}
-        onAdd={() => setShowAdd(true)}
+        onAdd={openNewViolation}
       />
 
       <TrendPanel trends={trends} />
@@ -699,7 +718,7 @@ function Dashboard() {
               </p>
             </div>
             <Button
-              onClick={() => (showAdd ? closeEditor() : setShowAdd(true))}
+              onClick={() => (showAdd ? closeEditor() : openNewViolation())}
               disabled={!canManage}
             >
               <Plus /> Add violator
@@ -777,6 +796,7 @@ function Dashboard() {
 
         {showAdd ? (
           <AddViolationForm
+            id="add-violation-form"
             key={editingViolation?.id ?? "new"}
             form={form}
             onSubmit={editingViolation ? handleSaveViolation : handleAddViolation}
@@ -785,7 +805,7 @@ function Dashboard() {
             editing={Boolean(editingViolation)}
           />
         ) : (
-          <QuickGuide onAdd={() => setShowAdd(true)} canManage={canManage} />
+          <QuickGuide onAdd={openNewViolation} canManage={canManage} />
         )}
       </section>
 
@@ -1285,12 +1305,14 @@ function GuideStep({
 }
 
 function AddViolationForm({
+  id,
   form,
   onSubmit,
   onClose,
   busy,
   editing,
 }: {
+  id: string;
   form: typeof emptyForm;
   onSubmit: (draft: typeof emptyForm) => void;
   onClose: () => void;
@@ -1298,7 +1320,7 @@ function AddViolationForm({
   editing: boolean;
 }) {
   return (
-    <aside className="surface-panel h-fit p-6">
+    <aside id={id} className="surface-panel h-fit scroll-mt-6 p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <span className="flex size-11 items-center justify-center rounded-lg bg-primary text-primary-foreground">

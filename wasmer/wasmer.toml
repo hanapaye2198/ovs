@@ -1,6 +1,6 @@
 [package]
 name = "kikoy12345amaba/ovs-demo-web"
-version = "0.2.1"
+version = "0.2.2"
 description = "OVS ordinance violation system demo"
 
 [dependencies]
