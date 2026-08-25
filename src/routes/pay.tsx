@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, CheckCircle2, ExternalLink, Megaphone, ShieldCheck } from "lucide-react";
 
 import trafficImage from "@/assets/edsa-traffic-xl-f14437c9.png";
-import mmdaLogo from "@/assets/mmda_logo-4ef0c400.png";
+import tagumCityLogo from "@/assets/tagum-city-seal.png";
 
 const MMDA_PLATE_CHECK_URL = "https://mayhulika.mmda.gov.ph/check-for-violations/m/plate-no";
 
@@ -19,10 +19,11 @@ const mmdaNavItems = [
 export const Route = createFileRoute("/pay")({
   head: () => ({
     meta: [
-      { title: "Pay a Violation Ticket | NCAS" },
+      { title: "Pay a Violation Ticket | Tagum City Traffic Management Office" },
       {
         name: "description",
-        content: "Check a vehicle plate for violations through the MMDA May Huli Ka service.",
+        content:
+          "Check a vehicle plate for violations through the Tagum City Traffic Management Office demo.",
       },
     ],
   }),
@@ -59,7 +60,7 @@ function Pay() {
       <section className="surface-panel mx-auto mt-6 max-w-6xl overflow-hidden bg-card sm:mt-8">
         <div className="relative overflow-hidden">
           <nav
-            aria-label="May Huli Ka service navigation"
+            aria-label="Tagum City Traffic Management Office service navigation"
             className="relative z-20 flex min-h-20 items-stretch overflow-x-auto bg-primary px-3 text-primary-foreground sm:px-5"
           >
             <a
@@ -67,9 +68,13 @@ function Pay() {
               target="_blank"
               rel="noreferrer"
               className="flex shrink-0 items-center px-3 py-3 sm:px-5"
-              aria-label="MMDA May Huli Ka home"
+              aria-label="Tagum City Traffic Management Office home"
             >
-              <img src={mmdaLogo} alt="MMDA" className="size-12 object-contain sm:size-14" />
+              <img
+                src={tagumCityLogo}
+                alt="Tagum City Traffic Management Office"
+                className="size-12 object-contain sm:size-14"
+              />
             </a>
 
             <div className="flex min-w-max items-stretch">
@@ -107,15 +112,15 @@ function Pay() {
 
             <div className="relative z-10 flex flex-col items-center text-center">
               <img
-                src={mmdaLogo}
-                alt="Metropolitan Manila Development Authority"
-                className="size-20 sm:size-24"
+                src={tagumCityLogo}
+                alt="Tagum City Traffic Management Office"
+                className="size-20 rounded-full object-contain sm:size-24"
               />
               <span className="mt-3 bg-destructive px-5 py-2 text-xs font-bold uppercase tracking-wide text-destructive-foreground sm:text-sm">
                 No Contact Apprehension Policy
               </span>
-              <h1 className="mt-4 font-display text-4xl font-bold uppercase tracking-tight text-foreground sm:text-5xl">
-                May Huli Ka
+              <h1 className="mt-4 max-w-xl font-display text-3xl font-bold uppercase leading-tight tracking-tight text-foreground sm:text-4xl">
+                Tagum City Traffic Management Office
               </h1>
             </div>
 
@@ -222,7 +227,7 @@ function Pay() {
               href="https://mayhulika.mmda.gov.ph/"
               target="_blank"
               rel="noreferrer"
-              aria-label="Open May Huli Ka announcements"
+              aria-label="Open traffic management announcements"
               className="absolute bottom-5 right-5 z-10 flex size-12 items-center justify-center rounded-full border-4 border-card bg-card text-primary shadow-lg transition-transform hover:scale-105 sm:bottom-6 sm:right-7"
             >
               <Megaphone className="size-5" />
@@ -231,8 +236,9 @@ function Pay() {
         </div>
 
         <p className="border-t border-border px-5 py-4 text-xs leading-5 text-muted-foreground sm:px-6">
-          This native NCAS demo reproduces the May Huli Ka lookup experience. Live violation records
-          and payment processing are handled by mayhulika.mmda.gov.ph.
+          This native NCAS demo reproduces the Tagum City Traffic Management Office lookup
+          experience. Live violation records and payment processing are handled by the external MMDA
+          service.
         </p>
       </section>
     </div>
