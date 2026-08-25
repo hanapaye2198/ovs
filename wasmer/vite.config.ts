@@ -31,6 +31,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(configDir, "../src"),
       "@tanstack/react-start/server": path.resolve(configDir, "./react-start-server.ts"),
+      "@tanstack/start-storage-context": path.resolve(configDir, "./start-storage-context.ts"),
       "@tanstack/react-start": path.resolve(configDir, "./react-start-client.ts"),
     },
   },
