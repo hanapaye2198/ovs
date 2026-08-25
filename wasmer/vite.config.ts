@@ -7,7 +7,16 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
-const spaRoutes = ["auth", "channels", "dashboard", "features", "pay", "portal", "support"];
+const spaRoutes = [
+  "auth",
+  "channels",
+  "dashboard",
+  "features",
+  "mayhulika",
+  "pay",
+  "portal",
+  "support",
+];
 
 function copySpaRouteEntries() {
   return {

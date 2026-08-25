@@ -17,6 +17,7 @@ const nav = [
   { to: "/features", label: "Features" },
   { to: "/channels", label: "Payment channels" },
   { to: "/portal", label: "Citizen portal" },
+  { to: "/mayhulika", label: "May Huli Ka" },
   { to: "/support", label: "Support" },
   { to: "/pay", label: "Pay a ticket" },
 ] as const;

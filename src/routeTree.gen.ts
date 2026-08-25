@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChannelsRouteImport } from './routes/channels'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as FeaturesRouteImport } from './routes/features'
+import { Route as MayhulikaRouteImport } from './routes/mayhulika'
 import { Route as PayRouteImport } from './routes/pay'
 import { Route as PortalRouteImport } from './routes/portal'
 import { Route as SupportRouteImport } from './routes/support'
@@ -43,6 +44,11 @@ const FeaturesRoute = FeaturesRouteImport.update({
   path: '/features',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MayhulikaRoute = MayhulikaRouteImport.update({
+  id: '/mayhulika',
+  path: '/mayhulika',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PayRoute = PayRouteImport.update({
   id: '/pay',
   path: '/pay',
@@ -65,6 +71,7 @@ export interface FileRoutesByFullPath {
   '/channels': typeof ChannelsRoute
   '/dashboard': typeof DashboardRoute
   '/features': typeof FeaturesRoute
+  '/mayhulika': typeof MayhulikaRoute
   '/pay': typeof PayRoute
   '/portal': typeof PortalRoute
   '/support': typeof SupportRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/channels': typeof ChannelsRoute
   '/dashboard': typeof DashboardRoute
   '/features': typeof FeaturesRoute
+  '/mayhulika': typeof MayhulikaRoute
   '/pay': typeof PayRoute
   '/portal': typeof PortalRoute
   '/support': typeof SupportRoute
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/channels': typeof ChannelsRoute
   '/dashboard': typeof DashboardRoute
   '/features': typeof FeaturesRoute
+  '/mayhulika': typeof MayhulikaRoute
   '/pay': typeof PayRoute
   '/portal': typeof PortalRoute
   '/support': typeof SupportRoute
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/dashboard'
     | '/features'
+    | '/mayhulika'
     | '/pay'
     | '/portal'
     | '/support'
@@ -108,6 +118,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/dashboard'
     | '/features'
+    | '/mayhulika'
     | '/pay'
     | '/portal'
     | '/support'
@@ -118,6 +129,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/dashboard'
     | '/features'
+    | '/mayhulika'
     | '/pay'
     | '/portal'
     | '/support'
@@ -129,6 +141,7 @@ export interface RootRouteChildren {
   ChannelsRoute: typeof ChannelsRoute
   DashboardRoute: typeof DashboardRoute
   FeaturesRoute: typeof FeaturesRoute
+  MayhulikaRoute: typeof MayhulikaRoute
   PayRoute: typeof PayRoute
   PortalRoute: typeof PortalRoute
   SupportRoute: typeof SupportRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mayhulika': {
+      id: '/mayhulika'
+      path: '/mayhulika'
+      fullPath: '/mayhulika'
+      preLoaderRoute: typeof MayhulikaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pay': {
       id: '/pay'
       path: '/pay'
@@ -201,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelsRoute: ChannelsRoute,
   DashboardRoute: DashboardRoute,
   FeaturesRoute: FeaturesRoute,
+  MayhulikaRoute: MayhulikaRoute,
   PayRoute: PayRoute,
   PortalRoute: PortalRoute,
   SupportRoute: SupportRoute,
