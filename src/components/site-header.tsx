@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Menu, ShieldCheck } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import tagumCitySeal from "@/assets/tagum-city-seal.png";
 import { Button } from "@/components/ui/button";
 import {
   DEMO_MODE,
@@ -73,8 +74,8 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-4 px-4">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <ShieldCheck className="size-5" />
+          <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-0.5 shadow-sm ring-1 ring-border">
+            <img src={tagumCitySeal} alt="Tagum City seal" className="size-full object-contain" />
           </span>
           <span className="leading-tight">
             <span className="block font-display text-lg font-semibold tracking-tight">NCAS</span>

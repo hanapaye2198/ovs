@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { ShieldCheck } from "lucide-react";
+
+import tagumCitySeal from "@/assets/tagum-city-seal.png";
 
 export function SiteFooter() {
   return (
@@ -7,8 +8,8 @@ export function SiteFooter() {
       <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div className="sm:col-span-2">
           <div className="flex items-center gap-2.5">
-            <span className="flex size-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <ShieldCheck className="size-5" />
+            <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white p-0.5 shadow-sm ring-1 ring-border">
+              <img src={tagumCitySeal} alt="Tagum City seal" className="size-full object-contain" />
             </span>
             <span className="font-display text-lg font-semibold">Surepay Technologies Inc.</span>
           </div>
