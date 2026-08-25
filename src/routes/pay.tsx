@@ -1,11 +1,9 @@
 import { type FormEvent, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Check, CheckCircle2, ExternalLink, Megaphone, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Megaphone, ShieldCheck } from "lucide-react";
 
 import trafficImage from "@/assets/edsa-traffic-xl-f14437c9.png";
 import tagumCityLogo from "@/assets/tagum-city-seal.png";
-
-const MMDA_PLATE_CHECK_URL = "https://mayhulika.mmda.gov.ph/check-for-violations/m/plate-no";
 
 const mmdaNavItems = [
   "PAY MY FINE",
@@ -44,7 +42,7 @@ function Pay() {
     }
 
     setLookupMessage(
-      `Demo lookup received for ${plateNumber.trim().toUpperCase()}. Open the live MMDA page to check current records.`,
+      `Demo lookup received for ${plateNumber.trim().toUpperCase()}. Results stay inside this NCAS demo.`,
     );
   }
 
@@ -63,40 +61,26 @@ function Pay() {
             aria-label="Tagum City Traffic Management Office service navigation"
             className="relative z-20 flex min-h-20 items-stretch overflow-x-auto bg-primary px-3 text-primary-foreground sm:px-5"
           >
-            <a
-              href={MMDA_PLATE_CHECK_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="flex shrink-0 items-center px-3 py-3 sm:px-5"
-              aria-label="Tagum City Traffic Management Office home"
-            >
+            <div className="flex shrink-0 items-center px-3 py-3 sm:px-5">
               <img
                 src={tagumCityLogo}
                 alt="Tagum City Traffic Management Office"
                 className="size-12 object-contain sm:size-14"
               />
-            </a>
+            </div>
 
             <div className="flex min-w-max items-stretch">
               {mmdaNavItems.map((item) => (
-                <a
+                <span
                   key={item}
-                  href={MMDA_PLATE_CHECK_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center px-3 text-center text-[10px] font-bold leading-tight transition-colors hover:bg-primary/80 sm:px-4 sm:text-xs"
+                  className="flex items-center px-3 text-center text-[10px] font-bold leading-tight sm:px-4 sm:text-xs"
                 >
                   {item}
-                </a>
+                </span>
               ))}
-              <a
-                href={MMDA_PLATE_CHECK_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="flex shrink-0 items-center bg-destructive px-4 text-center text-[10px] font-bold leading-tight text-destructive-foreground transition-colors hover:bg-destructive/90 sm:px-5 sm:text-xs"
-              >
+              <span className="flex shrink-0 items-center bg-destructive px-4 text-center text-[10px] font-bold leading-tight text-destructive-foreground sm:px-5 sm:text-xs">
                 CHECK FOR VIOLATIONS
-              </a>
+              </span>
             </div>
           </nav>
 
@@ -214,31 +198,23 @@ function Pay() {
               )}
             </div>
 
-            <a
-              href={MMDA_PLATE_CHECK_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="relative z-10 mt-3 inline-flex items-center gap-2 text-xs font-semibold text-primary underline-offset-4 hover:underline"
-            >
-              Open live MMDA results <ExternalLink className="size-3.5" />
-            </a>
+            <p className="relative z-10 mt-3 text-center text-xs font-semibold text-primary">
+              Demo results stay inside the NCAS workspace.
+            </p>
 
-            <a
-              href="https://mayhulika.mmda.gov.ph/"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="Open traffic management announcements"
+            <span
+              role="img"
+              aria-label="Traffic management announcements"
               className="absolute bottom-5 right-5 z-10 flex size-12 items-center justify-center rounded-full border-4 border-card bg-card text-primary shadow-lg transition-transform hover:scale-105 sm:bottom-6 sm:right-7"
             >
               <Megaphone className="size-5" />
-            </a>
+            </span>
           </div>
         </div>
 
         <p className="border-t border-border px-5 py-4 text-xs leading-5 text-muted-foreground sm:px-6">
           This native NCAS demo reproduces the Tagum City Traffic Management Office lookup
-          experience. Live violation records and payment processing are handled by the external MMDA
-          service.
+          experience. All interactions on this page stay within the NCAS demo workspace.
         </p>
       </section>
     </div>

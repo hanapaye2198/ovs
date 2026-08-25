@@ -1,6 +1,6 @@
 [package]
 name = "kikoy12345amaba/ovs-demo-web"
-version = "0.2.10"
+version = "0.2.11"
 description = "Non Contact Apprehension System demo"
 
 [dependencies]
