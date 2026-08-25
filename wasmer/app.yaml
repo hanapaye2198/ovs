@@ -1,0 +1,4 @@
+kind: wasmer.io/App.v0
+name: ovs-demo
+owner: kikoy12345amaba
+package: .

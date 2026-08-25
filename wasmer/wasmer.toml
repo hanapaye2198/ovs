@@ -1,0 +1,19 @@
+[package]
+name = "kikoy12345amaba/ovs-demo-web"
+version = "0.1.2"
+description = "OVS ordinance violation system demo"
+
+[dependencies]
+"wasmer/static-web-server" = "1"
+
+[fs]
+"/public" = "dist"
+"/settings" = "settings"
+
+[[command]]
+name = "run"
+module = "wasmer/static-web-server:webserver"
+runner = "https://webc.org/runner/wasi"
+
+[command.annotations.wasi]
+main-args = ["-w", "/settings/config.toml"]

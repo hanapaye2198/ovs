@@ -1,0 +1,7 @@
+[general]
+host = "::"
+port = 8080
+root = "/public"
+compression = true
+page-fallback = "/index.html"
+log-level = "error"
