@@ -4,14 +4,8 @@ import { useEffect, useState } from "react";
 
 import tagumCitySeal from "@/assets/tagum-city-seal.png";
 import { Button } from "@/components/ui/button";
-import {
-  DEMO_MODE,
-  DEMO_STAFF_SESSION_EVENT,
-  readDemoStaffSession,
-  type DemoStaffRole,
-} from "@/lib/demo-data";
+import { readStaffSession, STAFF_AUTH_EVENT, type StaffRole } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 
 const nav = [
   { to: "/", label: "Home" },
@@ -25,42 +19,21 @@ const nav = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [staffSignedIn, setStaffSignedIn] = useState(false);
-  const [staffRole, setStaffRole] = useState<DemoStaffRole | null>(null);
+  const [staffRole, setStaffRole] = useState<StaffRole | null>(null);
 
   useEffect(() => {
     const syncStaffSession = () => {
-      const session = readDemoStaffSession();
+      const session = readStaffSession();
       setStaffSignedIn(Boolean(session));
-      setStaffRole(session?.role ?? null);
+      setStaffRole(session?.user.role ?? null);
     };
 
-    if (DEMO_MODE) {
-      syncStaffSession();
-      window.addEventListener("storage", syncStaffSession);
-      window.addEventListener(DEMO_STAFF_SESSION_EVENT, syncStaffSession);
-      return () => {
-        window.removeEventListener("storage", syncStaffSession);
-        window.removeEventListener(DEMO_STAFF_SESSION_EVENT, syncStaffSession);
-      };
-    }
-
-    let active = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (active) {
-        setStaffSignedIn(Boolean(data.session));
-        setStaffRole(data.session ? "admin" : null);
-      }
-    });
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setStaffSignedIn(Boolean(session));
-      setStaffRole(session ? "admin" : null);
-    });
-
+    syncStaffSession();
+    window.addEventListener("storage", syncStaffSession);
+    window.addEventListener(STAFF_AUTH_EVENT, syncStaffSession);
     return () => {
-      active = false;
-      subscription.unsubscribe();
+      window.removeEventListener("storage", syncStaffSession);
+      window.removeEventListener(STAFF_AUTH_EVENT, syncStaffSession);
     };
   }, []);
 

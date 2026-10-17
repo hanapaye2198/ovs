@@ -1,23 +1,36 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, CheckCircle2, Megaphone, ShieldCheck } from "lucide-react";
 
 import trafficImage from "@/assets/edsa-traffic-xl-f14437c9.png";
 import tagumCityLogo from "@/assets/tagum-city-seal.png";
+import { CHANNEL_GROUPS } from "@/routes/channels";
+import { lookupByPlate, settleTicket, type PublicTicket, type SettlementReceipt } from "@/lib/api";
 import { DEMO_MODE } from "@/lib/demo-data";
-import { readDemoViolationsByPlate } from "@/lib/demo-lookup";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { lookupViolationsByPlate, type PublicTicket } from "@/lib/ovs.functions";
 import { normalizeVehiclePlate } from "@/lib/plate";
 
+type PaySearch = {
+  plate?: string;
+  mv?: string;
+};
+
 export const Route = createFileRoute("/pay")({
+  validateSearch: (search: Record<string, unknown>): PaySearch => {
+    const plate = search["plate"];
+    const mv = search["mv"];
+    return {
+      ...(typeof plate === "string" ? { plate } : {}),
+      ...(typeof mv === "string" ? { mv } : {}),
+    };
+  },
   head: () => ({
     meta: [
       { title: "Pay a Violation Ticket | Tagum City Traffic Management Office" },
       {
         name: "description",
         content:
-          "Check a vehicle plate for violations through the Tagum City Traffic Management Office demo.",
+          "Check a vehicle plate for violations and settle an open ticket through the Tagum City Traffic Management Office portal.",
       },
     ],
   }),
@@ -25,19 +38,19 @@ export const Route = createFileRoute("/pay")({
 });
 
 function Pay() {
-  const [plateNumber, setPlateNumber] = useState("");
-  const [mvFileNumber, setMvFileNumber] = useState("");
+  const search = Route.useSearch();
+  const [plateNumber, setPlateNumber] = useState(search.plate ?? "");
+  const [mvFileNumber, setMvFileNumber] = useState(search.mv ?? "");
   const [lookupMessage, setLookupMessage] = useState<{
     tone: "success" | "error";
     text: string;
   } | null>(null);
   const [matches, setMatches] = useState<PublicTicket[]>([]);
   const [isChecking, setIsChecking] = useState(false);
+  const [receipt, setReceipt] = useState<SettlementReceipt | null>(null);
 
-  async function handleLookup(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!plateNumber.trim() || !mvFileNumber.trim()) {
+  async function runLookup(plate: string, mvFile: string) {
+    if (!plate.trim() || !mvFile.trim()) {
       setMatches([]);
       setLookupMessage({
         tone: "error",
@@ -49,12 +62,11 @@ function Pay() {
     setIsChecking(true);
     setLookupMessage(null);
     setMatches([]);
+    setReceipt(null);
 
     try {
-      const normalizedPlate = normalizeVehiclePlate(plateNumber);
-      const tickets = DEMO_MODE
-        ? readDemoViolationsByPlate(normalizedPlate)
-        : (await lookupViolationsByPlate({ data: { vehiclePlate: normalizedPlate } })).tickets;
+      const normalizedPlate = normalizeVehiclePlate(plate);
+      const tickets = (await lookupByPlate(normalizedPlate, mvFile.trim())).tickets;
 
       setMatches(tickets);
       setLookupMessage(
@@ -65,7 +77,7 @@ function Pay() {
             }
           : {
               tone: "error",
-              text: `No violation records found for ${normalizedPlate}. Check the plate number and try again.`,
+              text: `No violation records found for ${normalizedPlate}. Check the plate number and MV file number, then try again.`,
             },
       );
     } catch (cause) {
@@ -76,6 +88,28 @@ function Pay() {
     } finally {
       setIsChecking(false);
     }
+  }
+
+  useEffect(() => {
+    if (search.plate && search.mv) {
+      void runLookup(search.plate, search.mv);
+    }
+    // Prefill from the portal only when those search values change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.plate, search.mv]);
+
+  function handleLookup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void runLookup(plateNumber, mvFileNumber);
+  }
+
+  function markPaid(ticketNumber: string, nextReceipt: SettlementReceipt) {
+    setReceipt(nextReceipt);
+    setMatches((current) =>
+      current.map((ticket) =>
+        ticket.ticket_number === ticketNumber ? { ...ticket, status: "paid" } : ticket,
+      ),
+    );
   }
 
   return (
@@ -130,6 +164,7 @@ function Pay() {
                     setPlateNumber(event.target.value.toUpperCase());
                     setLookupMessage(null);
                     setMatches([]);
+                    setReceipt(null);
                   }}
                   placeholder="PLATE NUMBER"
                   autoComplete="off"
@@ -155,6 +190,7 @@ function Pay() {
                     setMvFileNumber(event.target.value.toUpperCase());
                     setLookupMessage(null);
                     setMatches([]);
+                    setReceipt(null);
                   }}
                   placeholder="MV FILE NO."
                   autoComplete="off"
@@ -164,6 +200,11 @@ function Pay() {
               <p className="mt-2 text-center text-xs text-muted-foreground sm:text-sm">
                 As printed on your LTO Certificate of Registration (CR)
               </p>
+              {DEMO_MODE ? (
+                <p className="mt-2 text-center text-xs text-muted-foreground">
+                  Demo lookup: plate ABC 1122 and MV file MV-1122.
+                </p>
+              ) : null}
             </form>
 
             <div className="relative z-10 mt-4 flex w-full max-w-[300px] items-center gap-3 rounded-sm border border-border bg-card px-3 py-2 shadow sm:mt-5">
@@ -172,7 +213,7 @@ function Pay() {
               </span>
               <div className="text-left">
                 <p className="text-xs font-semibold text-foreground">Verification ready</p>
-                <p className="text-[10px] text-muted-foreground">Demo protection check</p>
+                <p className="text-[10px] text-muted-foreground">Plate and MV file must match</p>
               </div>
               <ShieldCheck className="ml-auto size-5 text-primary" />
             </div>
@@ -201,6 +242,33 @@ function Pay() {
                 </div>
               )}
             </div>
+
+            {receipt ? (
+              <div className="relative z-10 mt-4 w-full max-w-[540px] rounded-xl border border-success/30 bg-card p-4 text-left shadow-panel sm:p-5">
+                <p className="text-xs font-semibold uppercase tracking-wide text-success">
+                  Payment recorded
+                </p>
+                <h2 className="mt-1 text-lg font-semibold">{receipt.ticketNumber}</h2>
+                <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                  <div>
+                    <dt className="text-muted-foreground">Reference</dt>
+                    <dd className="font-mono font-semibold">{receipt.reference}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Amount</dt>
+                    <dd className="font-semibold">{formatCurrency(receipt.amount)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Channel</dt>
+                    <dd>{receipt.channel}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted-foreground">Paid</dt>
+                    <dd>{formatDate(receipt.paidAt)}</dd>
+                  </div>
+                </dl>
+              </div>
+            ) : null}
 
             {matches.length > 0 && (
               <div className="relative z-10 mt-4 w-full max-w-[540px] space-y-3 text-left">
@@ -240,6 +308,9 @@ function Pay() {
                         </p>
                       </div>
                     </div>
+                    {ticket.status === "unpaid" ? (
+                      <SettleForm ticket={ticket} onPaid={markPaid} />
+                    ) : null}
                   </article>
                 ))}
               </div>
@@ -256,10 +327,85 @@ function Pay() {
         </div>
 
         <p className="border-t border-border px-5 py-4 text-xs leading-5 text-muted-foreground sm:px-6">
-          This native NCAS demo reproduces the Tagum City Traffic Management Office lookup
-          experience. All interactions on this page stay within the NCAS demo workspace.
+          Plate lookup matches the MV file number on the certificate of registration. An unpaid
+          ticket can be settled here, and the receipt is stored with the Laravel record.
         </p>
       </section>
     </div>
+  );
+}
+
+function SettleForm({
+  ticket,
+  onPaid,
+}: {
+  ticket: PublicTicket;
+  onPaid: (ticketNumber: string, receipt: SettlementReceipt) => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [channel, setChannel] = useState("GCash");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handlePay(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const receipt = await settleTicket({
+        ticketNumber: ticket.ticket_number,
+        channel,
+        email,
+      });
+      onPaid(ticket.ticket_number, receipt);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Payment could not be recorded.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handlePay} className="mt-4 space-y-3 border-t border-border pt-4">
+      <label className="block text-xs font-medium text-muted-foreground" htmlFor={`email-${ticket.ticket_number}`}>
+        Receipt email
+        <input
+          id={`email-${ticket.ticket_number}`}
+          type="email"
+          required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="you@email.com"
+          className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+        />
+      </label>
+      <label className="block text-xs font-medium text-muted-foreground" htmlFor={`channel-${ticket.ticket_number}`}>
+        Payment channel
+        <select
+          id={`channel-${ticket.ticket_number}`}
+          value={channel}
+          onChange={(event) => setChannel(event.target.value)}
+          className="mt-1 h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+        >
+          {CHANNEL_GROUPS.map((group) => (
+            <optgroup key={group.label} label={group.label}>
+              {group.items.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </label>
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      <button
+        type="submit"
+        disabled={busy}
+        className="flex h-11 w-full items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-wait disabled:opacity-70"
+      >
+        {busy ? "Recording payment..." : `Pay ${formatCurrency(ticket.fine_amount)}`}
+      </button>
+    </form>
   );
 }

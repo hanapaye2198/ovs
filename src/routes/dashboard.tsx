@@ -19,7 +19,7 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -29,17 +29,21 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { normalizeVehiclePlate } from "@/lib/plate";
 import {
-  clearDemoStaffSession,
-  DEMO_MODE,
-  DEMO_PAYMENTS,
-  DEMO_PAYMENTS_STORAGE_KEY,
-  DEMO_STAFF_ACCOUNTS,
-  DEMO_VIOLATIONS,
-  DEMO_VIOLATIONS_STORAGE_KEY,
-  readDemoStaffSession,
-} from "@/lib/demo-data";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database, Tables } from "@/integrations/supabase/types";
+  createStaffUser,
+  createViolation,
+  deleteViolation,
+  getDashboard,
+  listStaffUsers,
+  logout,
+  readStaffSession,
+  resetRecords,
+  updateViolation,
+  type StaffAccount,
+  type StaffPayment,
+  type StaffRole,
+  type StaffViolation,
+  type SupportRequestRecord,
+} from "@/lib/api";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -55,9 +59,9 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
-type Violation = Tables<"violations">;
-type Payment = Tables<"payments">;
-type AppRole = Database["public"]["Enums"]["app_role"];
+type Violation = StaffViolation;
+type Payment = StaffPayment;
+type AppRole = StaffRole;
 type TrendPoint = {
   key: string;
   label: string;
@@ -74,7 +78,12 @@ const emptyForm = {
   fineAmount: "",
   location: "",
   vehiclePlate: "",
+  mvFileNumber: "",
+  address: "",
+  licenseNumber: "",
+  citizenEmail: "",
   officer: "",
+  remarks: "",
   status: "unpaid" as Violation["status"],
 };
 
@@ -93,7 +102,7 @@ const rolePageContent: Record<
     title: "Control the whole NCAS operation.",
     description: "Review collections, manage violation records, and keep staff access organized.",
     workspaceTitle: "Administrative control center",
-    workspaceText: "This role can manage records and oversee every staff workspace in the demo.",
+    workspaceText: "This role can manage records and oversee every staff workspace.",
   },
   encoder: {
     eyebrow: "Encoder workspace",
@@ -114,22 +123,6 @@ const rolePageContent: Record<
   },
 };
 
-function readDemoRows<T>(key: string, fallback: T[]) {
-  const stored = window.localStorage.getItem(key);
-  if (!stored) return [...fallback];
-
-  try {
-    const parsed: unknown = JSON.parse(stored);
-    return Array.isArray(parsed) ? (parsed as T[]) : [...fallback];
-  } catch {
-    return [...fallback];
-  }
-}
-
-function writeDemoRows<T>(key: string, rows: T[]) {
-  window.localStorage.setItem(key, JSON.stringify(rows));
-}
-
 function toUtcDay(value: string | null | undefined) {
   const timestamp = Date.parse(value ?? "");
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString().slice(0, 10) : null;
@@ -146,7 +139,12 @@ function readViolationDraft(formElement: HTMLFormElement): typeof emptyForm {
     fineAmount: read("fineAmount"),
     location: read("location"),
     vehiclePlate: read("vehiclePlate"),
+    mvFileNumber: read("mvFileNumber"),
+    address: read("address"),
+    licenseNumber: read("licenseNumber"),
+    citizenEmail: read("citizenEmail"),
     officer: read("officer"),
+    remarks: read("remarks"),
     status: read("status") as Violation["status"],
   };
 }
@@ -157,6 +155,7 @@ function Dashboard() {
   const [role, setRole] = useState<AppRole | null>(null);
   const [violations, setViolations] = useState<Violation[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [supportRequests, setSupportRequests] = useState<SupportRequestRecord[]>([]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAdd, setShowAdd] = useState(false);
@@ -169,112 +168,37 @@ function Dashboard() {
   const [notice, setNotice] = useState("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [liveConnected, setLiveConnected] = useState(false);
-  const demoInitialized = useRef(false);
 
   async function loadDashboard() {
     setLoading(true);
     setError("");
-    if (DEMO_MODE) {
-      if (!demoInitialized.current) {
-        setViolations(readDemoRows(DEMO_VIOLATIONS_STORAGE_KEY, DEMO_VIOLATIONS));
-        setPayments(readDemoRows(DEMO_PAYMENTS_STORAGE_KEY, DEMO_PAYMENTS));
-        demoInitialized.current = true;
-      }
+    try {
+      const data = await getDashboard();
+      setViolations(data.violations);
+      setPayments(data.payments);
+      setSupportRequests(data.support_requests ?? []);
       setLastUpdated(new Date().toISOString());
       setLiveConnected(true);
+    } catch (cause) {
+      setLiveConnected(false);
+      setError(cause instanceof Error ? cause.message : "Unable to load the dashboard.");
+    } finally {
       setLoading(false);
-      return;
     }
-    const [
-      { data: violationRows, error: violationError },
-      { data: paymentRows, error: paymentError },
-    ] = await Promise.all([
-      supabase.from("violations").select("*").order("issued_at", { ascending: false }),
-      supabase.from("payments").select("*").order("paid_at", { ascending: false }),
-    ]);
-
-    if (violationError || paymentError) {
-      setError(violationError?.message ?? paymentError?.message ?? "Unable to load the dashboard.");
-    } else {
-      setViolations(violationRows ?? []);
-      setPayments(paymentRows ?? []);
-      setLastUpdated(new Date().toISOString());
-    }
-    setLoading(false);
   }
 
   useEffect(() => {
-    let active = true;
-    let liveChannel: ReturnType<typeof supabase.channel> | null = null;
-    if (DEMO_MODE) {
-      const demoSession = readDemoStaffSession();
-      if (!demoSession) {
-        setLoading(false);
-        setAuthResolved(true);
-        return () => {
-          active = false;
-          setLiveConnected(false);
-        };
-      }
-      setUserId("demo-staff");
-      setUserEmail(demoSession.email);
-      setRole(demoSession.role);
+    const session = readStaffSession();
+    if (!session) {
+      setLoading(false);
       setAuthResolved(true);
-      void loadDashboard();
-      return () => {
-        active = false;
-        setLiveConnected(false);
-      };
+      return;
     }
-    supabase.auth.getUser().then(({ data, error: authError }) => {
-      if (!active) return;
-      if (authError || !data.user) {
-        setLoading(false);
-        setAuthResolved(true);
-        return;
-      }
-      setUserId(data.user.id);
-      setUserEmail(data.user.email ?? "");
-      supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", data.user.id)
-        .then(({ data: roleRows, error: roleError }) => {
-          if (!active) return;
-          const assignedRole = roleRows?.[0]?.role ?? null;
-          setRole(assignedRole);
-          setAuthResolved(true);
-          if (roleError || !assignedRole) {
-            setError(
-              "Your account is signed in, but it has not been assigned an LGU staff role yet.",
-            );
-            setLoading(false);
-            return;
-          }
-          void loadDashboard();
-          liveChannel = supabase
-            .channel(`lgu-dashboard-${data.user.id}`)
-            .on(
-              "postgres_changes",
-              { event: "*", schema: "public", table: "violations" },
-              () => void loadDashboard(),
-            )
-            .on(
-              "postgres_changes",
-              { event: "*", schema: "public", table: "payments" },
-              () => void loadDashboard(),
-            )
-            .subscribe((status) => {
-              if (!active) return;
-              setLiveConnected(status === "SUBSCRIBED");
-            });
-        });
-    });
-    return () => {
-      active = false;
-      setLiveConnected(false);
-      if (liveChannel) void supabase.removeChannel(liveChannel);
-    };
+    setUserId(session.user.id);
+    setUserEmail(session.user.email);
+    setRole(session.user.role);
+    setAuthResolved(true);
+    void loadDashboard();
   }, []);
 
   const filteredViolations = useMemo(() => {
@@ -344,31 +268,30 @@ function Dashboard() {
   }, [payments, violations]);
 
   async function handleSignOut() {
-    if (DEMO_MODE) {
-      clearDemoStaffSession();
-      window.location.assign("/auth");
-      return;
-    }
-
-    await supabase.auth.signOut();
+    await logout("staff");
     window.location.assign("/auth");
   }
 
-  function handleResetDemoData() {
-    if (!DEMO_MODE || !window.confirm("Reset all demo records to the original seed data?")) return;
+  async function handleResetDemoData() {
+    if (role !== "admin" || !window.confirm("Reset all records to the original seed data?")) return;
 
-    window.localStorage.removeItem(DEMO_VIOLATIONS_STORAGE_KEY);
-    window.localStorage.removeItem(DEMO_PAYMENTS_STORAGE_KEY);
-    setViolations([...DEMO_VIOLATIONS]);
-    setPayments([...DEMO_PAYMENTS]);
-    demoInitialized.current = true;
-    setNotice("Demo records reset to the original seed data.");
+    setBusy(true);
     setError("");
+    setNotice("");
+    try {
+      const result = await resetRecords();
+      await loadDashboard();
+      setNotice(result.message);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to reset records.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleDeleteViolation(violation: Violation) {
     if (role !== "admin") return;
-    if (!window.confirm(`Delete ${violation.ticket_number}? This cannot be undone in the demo.`)) {
+    if (!window.confirm(`Delete ${violation.ticket_number}? This cannot be undone.`)) {
       return;
     }
 
@@ -376,29 +299,15 @@ function Dashboard() {
     setError("");
     setNotice("");
 
-    if (DEMO_MODE) {
-      const nextViolations = violations.filter((item) => item.id !== violation.id);
-      const nextPayments = payments.filter((item) => item.violation_id !== violation.id);
-      setViolations(nextViolations);
-      setPayments(nextPayments);
-      writeDemoRows(DEMO_VIOLATIONS_STORAGE_KEY, nextViolations);
-      writeDemoRows(DEMO_PAYMENTS_STORAGE_KEY, nextPayments);
-      setNotice(`${violation.ticket_number} deleted from the demo records.`);
-      setBusy(false);
-      return;
-    }
-
-    const { error: deleteError } = await supabase
-      .from("violations")
-      .delete()
-      .eq("id", violation.id);
-    if (deleteError) {
-      setError(deleteError.message);
-    } else {
-      setNotice(`${violation.ticket_number} deleted.`);
+    try {
+      const result = await deleteViolation(violation.id);
+      setNotice(result.message);
       await loadDashboard();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to delete that violation.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   async function handleAddViolation(draft: typeof emptyForm) {
@@ -406,117 +315,66 @@ function Dashboard() {
     setError("");
     setNotice("");
 
-    if (DEMO_MODE) {
-      const now = new Date().toISOString();
-      const demoViolation: Violation = {
-        id: `demo-violation-${Date.now()}`,
+    try {
+      await createViolation({
         ticket_number: draft.ticketNumber.trim().toUpperCase(),
         violator_name: draft.violatorName.trim(),
-        address: null,
-        license_number: null,
-        vehicle_plate: normalizeVehiclePlate(draft.vehiclePlate) || null,
         violation_type: draft.violationType.trim(),
         ordinance_code: draft.ordinanceCode.trim() || null,
         fine_amount: Number(draft.fineAmount),
         location: draft.location.trim() || null,
-        issued_at: now,
+        vehicle_plate: normalizeVehiclePlate(draft.vehiclePlate) || null,
+        mv_file_number: draft.mvFileNumber.trim() || null,
+        address: draft.address.trim() || null,
+        license_number: draft.licenseNumber.trim() || null,
+        citizen_email: draft.citizenEmail.trim() || null,
         officer: draft.officer.trim() || null,
-        remarks: null,
+        remarks: draft.remarks.trim() || null,
         status: draft.status,
-        created_by: "demo-staff",
-        created_at: now,
-        updated_at: now,
-      };
-      const nextViolations = [demoViolation, ...violations];
-      setViolations(nextViolations);
-      writeDemoRows(DEMO_VIOLATIONS_STORAGE_KEY, nextViolations);
-      setNotice("Demo violation added to the dashboard.");
-      setForm(emptyForm);
-      setShowAdd(false);
-      setBusy(false);
-      return;
-    }
-
-    const { error: insertError } = await supabase.from("violations").insert({
-      ticket_number: draft.ticketNumber.trim().toUpperCase(),
-      violator_name: draft.violatorName.trim(),
-      violation_type: draft.violationType.trim(),
-      ordinance_code: draft.ordinanceCode.trim() || null,
-      fine_amount: Number(draft.fineAmount),
-      location: draft.location.trim() || null,
-      vehicle_plate: normalizeVehiclePlate(draft.vehiclePlate) || null,
-      officer: draft.officer.trim() || null,
-      created_by: userId,
-    });
-
-    if (insertError) {
-      setError(insertError.message);
-    } else {
+      });
       setNotice("Violation added to the dashboard.");
       setForm(emptyForm);
       setShowAdd(false);
       await loadDashboard();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to add that violation.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   async function handleSaveViolation(draft: typeof emptyForm) {
+    if (!editingViolation) return;
+
     setBusy(true);
     setError("");
     setNotice("");
 
-    const payload = {
-      ticket_number: draft.ticketNumber.trim().toUpperCase(),
-      violator_name: draft.violatorName.trim(),
-      violation_type: draft.violationType.trim(),
-      ordinance_code: draft.ordinanceCode.trim() || null,
-      fine_amount: Number(draft.fineAmount),
-      location: draft.location.trim() || null,
-      vehicle_plate: normalizeVehiclePlate(draft.vehiclePlate) || null,
-      officer: draft.officer.trim() || null,
-      status: draft.status,
-    };
-
-    if (DEMO_MODE && editingViolation) {
-      const now = new Date().toISOString();
-      const nextViolations = violations.map((violation) =>
-        violation.id === editingViolation.id
-          ? {
-              ...violation,
-              ticket_number: payload.ticket_number,
-              violator_name: payload.violator_name,
-              violation_type: payload.violation_type,
-              ordinance_code: payload.ordinance_code,
-              fine_amount: payload.fine_amount,
-              location: payload.location,
-              vehicle_plate: payload.vehicle_plate,
-              officer: payload.officer,
-              status: payload.status,
-              updated_at: now,
-            }
-          : violation,
-      );
-      setViolations(nextViolations);
-      writeDemoRows(DEMO_VIOLATIONS_STORAGE_KEY, nextViolations);
-      setNotice("Demo violation details updated.");
-      closeEditor();
-      setBusy(false);
-      return;
-    }
-
-    const { error: updateError } = await supabase
-      .from("violations")
-      .update(payload)
-      .eq("id", editingViolation?.id ?? "");
-
-    if (updateError) {
-      setError(updateError.message);
-    } else {
+    try {
+      await updateViolation(editingViolation.id, {
+        ticket_number: draft.ticketNumber.trim().toUpperCase(),
+        violator_name: draft.violatorName.trim(),
+        violation_type: draft.violationType.trim(),
+        ordinance_code: draft.ordinanceCode.trim() || null,
+        fine_amount: Number(draft.fineAmount),
+        location: draft.location.trim() || null,
+        vehicle_plate: normalizeVehiclePlate(draft.vehiclePlate) || null,
+        mv_file_number: draft.mvFileNumber.trim() || null,
+        address: draft.address.trim() || null,
+        license_number: draft.licenseNumber.trim() || null,
+        citizen_email: draft.citizenEmail.trim() || null,
+        officer: draft.officer.trim() || null,
+        remarks: draft.remarks.trim() || null,
+        status: draft.status,
+      });
       setNotice("Violation details updated.");
       closeEditor();
       await loadDashboard();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to update that violation.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   function openEditor(violation: Violation) {
@@ -530,7 +388,12 @@ function Dashboard() {
       fineAmount: String(violation.fine_amount),
       location: violation.location ?? "",
       vehiclePlate: normalizeVehiclePlate(violation.vehicle_plate),
+      mvFileNumber: violation.mv_file_number ?? "",
+      address: violation.address ?? "",
+      licenseNumber: violation.license_number ?? "",
+      citizenEmail: violation.citizen_email ?? "",
       officer: violation.officer ?? "",
+      remarks: violation.remarks ?? "",
       status: violation.status,
     });
   }
@@ -623,11 +486,7 @@ function Dashboard() {
               }`}
             >
               <Radio className="size-3.5" />
-              {DEMO_MODE
-                ? "Demo live preview"
-                : liveConnected
-                  ? "Live updates on"
-                  : "Connecting to live updates"}
+              {liveConnected ? "Laravel API connected" : "Connecting to Laravel"}
             </span>
             {lastUpdated ? <span>Last synced {formatDate(lastUpdated)}</span> : null}
           </div>
@@ -644,9 +503,9 @@ function Dashboard() {
           >
             <RefreshCw className={loading ? "animate-spin" : ""} /> Refresh
           </Button>
-          {DEMO_MODE && activeRole === "admin" ? (
-            <Button variant="outline" size="sm" onClick={handleResetDemoData}>
-              Reset demo
+          {activeRole === "admin" ? (
+            <Button variant="outline" size="sm" onClick={() => void handleResetDemoData()} disabled={busy}>
+              Reset records
             </Button>
           ) : null}
           <Button variant="ghost" size="sm" onClick={() => void handleSignOut()}>
@@ -814,6 +673,7 @@ function Dashboard() {
       </section>
 
       <PaymentHistory payments={payments} violations={violations} />
+      <SupportInbox requests={supportRequests} />
     </div>
   );
 }
@@ -923,7 +783,7 @@ function TrendPanel({ trends }: { trends: TrendPoint[] }) {
           />
         </div>
         <div className="mt-7 rounded-lg bg-secondary/60 p-4 text-sm">
-          <p className="font-semibold">Demo data stays live</p>
+          <p className="font-semibold">Records stay in sync</p>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
             Add, edit, or delete a ticket and the trend bars and collection summary update with it.
           </p>
@@ -974,6 +834,44 @@ function RoleWorkspace({
   text: string;
   onAdd: () => void;
 }) {
+  const [staff, setStaff] = useState<StaffAccount[]>([]);
+  const [staffError, setStaffError] = useState("");
+  const [staffNotice, setStaffNotice] = useState("");
+  const [creatingStaff, setCreatingStaff] = useState(false);
+
+  useEffect(() => {
+    if (role !== "admin") return;
+    void listStaffUsers()
+      .then((result) => setStaff(result.users))
+      .catch((cause) =>
+        setStaffError(cause instanceof Error ? cause.message : "Unable to load staff accounts."),
+      );
+  }, [role]);
+
+  async function handleCreateStaff(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setCreatingStaff(true);
+    setStaffError("");
+    setStaffNotice("");
+    try {
+      await createStaffUser({
+        name: String(data.get("name") ?? ""),
+        email: String(data.get("email") ?? ""),
+        password: String(data.get("password") ?? ""),
+        role: String(data.get("role") ?? "encoder") as AppRole,
+      });
+      const result = await listStaffUsers();
+      setStaff(result.users);
+      setStaffNotice("Staff account created.");
+      event.currentTarget.reset();
+    } catch (cause) {
+      setStaffError(cause instanceof Error ? cause.message : "Unable to create that account.");
+    } finally {
+      setCreatingStaff(false);
+    }
+  }
+
   if (role === "admin") {
     return (
       <section className="mt-8 grid gap-4 lg:grid-cols-[1.35fr_0.85fr]">
@@ -993,7 +891,7 @@ function RoleWorkspace({
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Staff roles
               </p>
-              <p className="mt-2 text-2xl font-bold">3</p>
+              <p className="mt-2 text-2xl font-bold">{staff.length}</p>
               <p className="mt-1 text-xs text-muted-foreground">Configured workspaces</p>
             </div>
             <div className="rounded-lg bg-secondary/60 p-4">
@@ -1008,7 +906,7 @@ function RoleWorkspace({
                 Live status
               </p>
               <p className="mt-2 text-2xl font-bold text-success">Ready</p>
-              <p className="mt-1 text-xs text-muted-foreground">Demo data connected</p>
+              <p className="mt-1 text-xs text-muted-foreground">Laravel API connected</p>
             </div>
           </div>
         </div>
@@ -1019,14 +917,14 @@ function RoleWorkspace({
             </span>
             <div>
               <h2 className="font-semibold">Staff access</h2>
-              <p className="text-xs text-muted-foreground">Demo role assignments</p>
+              <p className="text-xs text-muted-foreground">Accounts stored in Laravel</p>
             </div>
           </div>
           <div className="mt-5 space-y-3">
-            {DEMO_STAFF_ACCOUNTS.map((account) => (
-              <div key={account.role} className="rounded-lg border border-border p-3">
+            {staff.map((account) => (
+              <div key={account.id} className="rounded-lg border border-border p-3">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm font-medium">{account.displayName}</span>
+                  <span className="text-sm font-medium">{account.name}</span>
                   <Badge variant="secondary" className="capitalize">
                     {account.role}
                   </Badge>
@@ -1034,7 +932,30 @@ function RoleWorkspace({
                 <p className="mt-1 text-xs text-muted-foreground">{account.email}</p>
               </div>
             ))}
+            {staff.length === 0 && !staffError ? (
+              <p className="text-sm text-muted-foreground">No staff accounts loaded yet.</p>
+            ) : null}
           </div>
+          <form onSubmit={handleCreateStaff} className="mt-5 space-y-2 border-t border-border pt-4">
+            <p className="text-sm font-medium">Add a staff account</p>
+            <Input name="name" placeholder="Full name" required />
+            <Input name="email" type="email" placeholder="staff@yourlgu.gov.ph" required />
+            <Input name="password" type="password" placeholder="Password, 8+ characters" minLength={8} required />
+            <select
+              name="role"
+              defaultValue="encoder"
+              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+            >
+              <option value="encoder">Encoder</option>
+              <option value="viewer">Viewer</option>
+              <option value="admin">Admin</option>
+            </select>
+            {staffError ? <p className="text-xs text-destructive">{staffError}</p> : null}
+            {staffNotice ? <p className="text-xs text-success">{staffNotice}</p> : null}
+            <Button type="submit" className="w-full" disabled={creatingStaff}>
+              {creatingStaff ? "Saving…" : "Create staff account"}
+            </Button>
+          </form>
         </div>
       </section>
     );
@@ -1426,11 +1347,54 @@ function AddViolationForm({
             placeholder="ABC 1234"
           />
           <Field
+            id="new-mv"
+            name="mvFileNumber"
+            label="MV file number"
+            value={form.mvFileNumber}
+            placeholder="MV-1122"
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field
+            id="new-license"
+            name="licenseNumber"
+            label="License number"
+            value={form.licenseNumber}
+            placeholder="N01-00-000000"
+          />
+          <Field
             id="new-officer"
             name="officer"
             label="Officer"
             value={form.officer}
             placeholder="Officer name"
+          />
+        </div>
+        <Field
+          id="new-address"
+          name="address"
+          label="Address"
+          value={form.address}
+          placeholder="City and barangay"
+        />
+        <Field
+          id="new-citizen-email"
+          name="citizenEmail"
+          label="Citizen email"
+          type="email"
+          value={form.citizenEmail}
+          placeholder="citizen@email.com"
+        />
+        <div className="space-y-1.5">
+          <Label htmlFor="new-remarks" className="text-xs">
+            Remarks
+          </Label>
+          <textarea
+            id="new-remarks"
+            name="remarks"
+            defaultValue={form.remarks}
+            placeholder="Optional case notes"
+            className="min-h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
         </div>
         <Button type="submit" className="mt-2 w-full" disabled={busy}>
@@ -1516,6 +1480,38 @@ function PaymentHistory({
           Showing the 8 most recent transactions.
         </p>
       ) : null}
+    </section>
+  );
+}
+
+function SupportInbox({ requests }: { requests: SupportRequestRecord[] }) {
+  return (
+    <section className="surface-panel mt-6 overflow-hidden">
+      <div className="border-b border-border p-5">
+        <h2 className="text-xl font-semibold">Support requests</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Messages submitted from the public support form.
+        </p>
+      </div>
+      {requests.length === 0 ? (
+        <p className="px-5 py-8 text-sm text-muted-foreground">No support requests yet.</p>
+      ) : (
+        <div className="divide-y divide-border">
+          {requests.map((request) => (
+            <article key={request.id} className="px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium">{request.topic}</p>
+                <p className="text-xs text-muted-foreground">{formatDate(request.created_at)}</p>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {request.name} · {request.email}
+                {request.ticket_number ? ` · ${request.ticket_number}` : ""}
+              </p>
+              <p className="mt-2 text-sm">{request.message}</p>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

@@ -5,14 +5,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  DEMO_MODE,
-  DEMO_STAFF_ACCOUNTS,
-  findDemoStaffAccount,
-  readDemoStaffSession,
-  saveDemoStaffSession,
-} from "@/lib/demo-data";
-import { supabase } from "@/integrations/supabase/client";
+import { login, readStaffSession } from "@/lib/api";
+import { DEMO_MODE, DEMO_STAFF_ACCOUNTS } from "@/lib/demo-data";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -40,19 +34,9 @@ function Auth() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (DEMO_MODE) {
-      if (readDemoStaffSession()) {
-        void navigate({ to: "/dashboard", replace: true });
-      }
-      return;
+    if (readStaffSession()) {
+      void navigate({ to: "/dashboard", replace: true });
     }
-    let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) void navigate({ to: "/dashboard", replace: true });
-    });
-    return () => {
-      active = false;
-    };
   }, [navigate]);
 
   function switchMode(nextMode: "sign-in" | "sign-up") {
@@ -73,42 +57,13 @@ function Auth() {
 
     setBusy(true);
     try {
-      if (DEMO_MODE) {
-        if (mode === "sign-in") {
-          const account = findDemoStaffAccount(email, password);
-          if (!account) {
-            setError("Invalid staff email or password.");
-            return;
-          }
-          saveDemoStaffSession(account);
-          await navigate({ to: "/dashboard" });
-        } else {
-          setMessage(
-            "Demo staff access is already configured. Use Sign in to open the demo dashboard.",
-          );
-          setMode("sign-in");
-        }
+      if (mode === "sign-up") {
+        setMessage("Staff accounts are issued by an administrator. Use Sign in with your LGU account.");
+        setMode("sign-in");
         return;
       }
-      if (mode === "sign-in") {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-        if (signInError) throw signInError;
-        await navigate({ to: "/dashboard" });
-      } else {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName } },
-        });
-        if (signUpError) throw signUpError;
-
-        if (data.session) {
-          await navigate({ to: "/dashboard" });
-        } else {
-          setMessage("Account created. Check your email to confirm your address, then sign in.");
-          setMode("sign-in");
-        }
-      }
+      await login(email, password, "staff");
+      await navigate({ to: "/dashboard" });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to complete that request.");
     } finally {

@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DEMO_MODE } from "@/lib/demo-data";
+import { submitSupportRequest } from "@/lib/api";
 
 export const Route = createFileRoute("/support")({
   head: () => ({
@@ -55,19 +55,21 @@ function Support() {
   const [topic, setTopic] = useState("Ticket lookup");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (DEMO_MODE) {
+    setError("");
+    setBusy(true);
+    try {
+      await submitSupportRequest({ name, email, ticketNumber, topic, message });
       setSubmitted(true);
-      return;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to send that request.");
+    } finally {
+      setBusy(false);
     }
-    const subject = encodeURIComponent(`[NCAS Support] ${topic}`);
-    const body = encodeURIComponent(
-      `Name: ${name}\nEmail: ${email}\nTicket number: ${ticketNumber || "Not provided"}\n\n${message}`,
-    );
-    window.location.href = `mailto:businessoperation@surepayinc.com.ph?subject=${subject}&body=${body}`;
-    setSubmitted(true);
   }
 
   return (
@@ -144,9 +146,9 @@ function Support() {
           {submitted ? (
             <div className="mt-8 rounded-xl border border-success/30 bg-success/10 p-6 text-center text-success">
               <CheckCircle2 className="mx-auto size-8" />
-              <h3 className="mt-3 font-semibold">Your email draft is ready</h3>
+              <h3 className="mt-3 font-semibold">Your request was received</h3>
               <p className="mt-1 text-sm">
-                Send the message from your email app to reach the support team.
+                The support team can find this message with the details you sent.
               </p>
               <Button
                 type="button"
@@ -218,8 +220,13 @@ function Support() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full sm:w-auto">
-                Open email request <ArrowRight />
+              {error ? (
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </p>
+              ) : null}
+              <Button type="submit" className="w-full sm:w-auto" disabled={busy}>
+                {busy ? "Sending…" : "Send request"} <ArrowRight />
               </Button>
             </form>
           )}

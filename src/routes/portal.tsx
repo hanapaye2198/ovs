@@ -19,25 +19,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { readDemoViolationsByPlate } from "@/lib/demo-lookup";
-import { formatCurrency, formatDate } from "@/lib/format";
-import { normalizeVehiclePlate } from "@/lib/plate";
-import {
-  DEMO_CITIZEN,
-  DEMO_CITIZEN_PAYMENTS,
-  DEMO_CITIZEN_SESSION_KEY,
-  DEMO_CITIZEN_TICKETS,
-  DEMO_TICKETS,
-  DEMO_MODE,
-} from "@/lib/demo-data";
 import {
   getCitizenPayments,
+  getCitizenTickets,
+  login,
+  logout,
+  lookupByPlate,
   lookupTicket,
-  lookupViolationsByPlate,
-  type CitizenPayment,
-  type PublicTicket,
-} from "@/lib/ovs.functions";
-import { supabase } from "@/integrations/supabase/client";
+  readCitizenSession,
+  registerCitizen,
+} from "@/lib/api";
+import { DEMO_CITIZEN, DEMO_MODE } from "@/lib/demo-data";
+import { formatCurrency, formatDate } from "@/lib/format";
+import type { CitizenPayment, PublicTicket } from "@/lib/api";
+import { normalizeVehiclePlate } from "@/lib/plate";
 
 export const Route = createFileRoute("/portal")({
   head: () => ({
@@ -66,6 +61,7 @@ function Portal() {
   const [password, setPassword] = useState("");
   const [user, setUser] = useState<PortalUser | null>(null);
   const [payments, setPayments] = useState<CitizenPayment[]>([]);
+  const [tickets, setTickets] = useState<PublicTicket[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentsError, setPaymentsError] = useState("");
   const [checking, setChecking] = useState(true);
@@ -73,17 +69,16 @@ function Portal() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const loadPaymentHistory = useCallback(async () => {
+  const loadAccount = useCallback(async () => {
     setPaymentsLoading(true);
     setPaymentsError("");
-    if (DEMO_MODE) {
-      setPayments([...DEMO_CITIZEN_PAYMENTS]);
-      setPaymentsLoading(false);
-      return;
-    }
     try {
-      const result = await getCitizenPayments();
-      setPayments(result.payments);
+      const [paymentResult, ticketResult] = await Promise.all([
+        getCitizenPayments(),
+        getCitizenTickets(),
+      ]);
+      setPayments(paymentResult.payments);
+      setTickets(ticketResult.tickets);
     } catch (cause) {
       setPaymentsError(
         cause instanceof Error ? cause.message : "Unable to load your payment history.",
@@ -93,58 +88,19 @@ function Portal() {
     }
   }, []);
 
-  const hydrateUser = useCallback(
-    async (authUser: {
-      id: string;
-      email?: string;
-      created_at: string;
-      user_metadata: Record<string, unknown>;
-    }) => {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", authUser.id)
-        .maybeSingle();
-      const metadataName = authUser.user_metadata["full_name"];
-      const profileName =
-        profile?.full_name ?? (typeof metadataName === "string" ? metadataName : "");
-
-      setUser({
-        email: authUser.email ?? "",
-        fullName: profileName || "NCAS citizen",
-        createdAt: authUser.created_at,
-      });
-    },
-    [],
-  );
-
   useEffect(() => {
-    if (DEMO_MODE) {
-      const stored = window.localStorage.getItem(DEMO_CITIZEN_SESSION_KEY);
-      if (stored === "active") {
-        setUser({
-          email: DEMO_CITIZEN.email,
-          fullName: DEMO_CITIZEN.fullName,
-          createdAt: "2026-08-01T08:00:00.000Z",
-        });
-        setPayments([...DEMO_CITIZEN_PAYMENTS]);
-      }
+    const session = readCitizenSession();
+    if (!session || session.user.role) {
       setChecking(false);
       return;
     }
-    let active = true;
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return;
-      if (data.session?.user) {
-        await hydrateUser(data.session.user);
-        await loadPaymentHistory();
-      }
-      if (active) setChecking(false);
+    setUser({
+      email: session.user.email,
+      fullName: session.user.name,
+      createdAt: session.user.created_at,
     });
-    return () => {
-      active = false;
-    };
-  }, [hydrateUser, loadPaymentHistory]);
+    void loadAccount().finally(() => setChecking(false));
+  }, [loadAccount]);
 
   function switchMode(nextMode: "sign-in" | "sign-up") {
     setMode(nextMode);
@@ -164,59 +120,16 @@ function Portal() {
 
     setBusy(true);
     try {
-      if (DEMO_MODE) {
-        if (
-          mode === "sign-in" &&
-          (email.trim().toLowerCase() !== DEMO_CITIZEN.email || password !== DEMO_CITIZEN.password)
-        ) {
-          setError("Invalid citizen email or password.");
-          return;
-        }
-        const demoUser = {
-          email: mode === "sign-in" ? DEMO_CITIZEN.email : email.trim(),
-          fullName: mode === "sign-in" ? DEMO_CITIZEN.fullName : fullName.trim(),
-          createdAt: "2026-08-01T08:00:00.000Z",
-        };
-        setUser({
-          ...demoUser,
-        });
-        setPayments([...DEMO_CITIZEN_PAYMENTS]);
-        window.localStorage.setItem(DEMO_CITIZEN_SESSION_KEY, "active");
-        setMessage("Demo citizen account loaded. Your sample receipt is ready below.");
-        setBusy(false);
-        return;
-      }
-      if (mode === "sign-in") {
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (signInError) throw signInError;
-        if (data.user) {
-          await hydrateUser(data.user);
-          await loadPaymentHistory();
-        }
-      } else {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName } },
-        });
-        if (signUpError) throw signUpError;
-
-        if (data.session?.user) {
-          const { error: profileError } = await supabase.from("profiles").upsert({
-            id: data.session.user.id,
-            full_name: fullName.trim(),
-          });
-          if (profileError) throw profileError;
-          await hydrateUser(data.session.user);
-          await loadPaymentHistory();
-        } else {
-          setMessage("Your account is ready. Check your email to confirm it, then sign in here.");
-          setMode("sign-in");
-        }
-      }
+      const session =
+        mode === "sign-in"
+          ? await login(email, password, "citizen")
+          : await registerCitizen({ fullName, email, password });
+      setUser({
+        email: session.user.email,
+        fullName: session.user.name,
+        createdAt: session.user.created_at,
+      });
+      await loadAccount();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to complete that request.");
     } finally {
@@ -225,13 +138,10 @@ function Portal() {
   }
 
   async function handleSignOut() {
-    if (DEMO_MODE) {
-      window.localStorage.removeItem(DEMO_CITIZEN_SESSION_KEY);
-    } else {
-      await supabase.auth.signOut();
-    }
+    await logout("citizen");
     setUser(null);
     setPayments([]);
+    setTickets([]);
     setPaymentsError("");
     setMode("sign-up");
     setMessage("");
@@ -253,7 +163,8 @@ function Portal() {
         payments={payments}
         paymentsLoading={paymentsLoading}
         paymentsError={paymentsError}
-        onRefresh={() => void loadPaymentHistory()}
+        tickets={tickets}
+        onRefresh={() => void loadAccount()}
         onSignOut={() => void handleSignOut()}
       />
     );
@@ -450,6 +361,7 @@ function CitizenDashboard({
   payments,
   paymentsLoading,
   paymentsError,
+  tickets,
   onRefresh,
   onSignOut,
 }: {
@@ -457,6 +369,7 @@ function CitizenDashboard({
   payments: CitizenPayment[];
   paymentsLoading: boolean;
   paymentsError: string;
+  tickets: PublicTicket[];
   onRefresh: () => void;
   onSignOut: () => void;
 }) {
@@ -515,7 +428,7 @@ function CitizenDashboard({
       </div>
 
       <CitizenTicketLookup />
-      <CitizenViolationList tickets={DEMO_CITIZEN_TICKETS} />
+      <CitizenViolationList tickets={tickets} />
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[0.75fr_1.25fr]">
         <section className="surface-panel p-6">
@@ -610,9 +523,7 @@ function CitizenTicketLookup() {
           throw new Error("Enter both the plate number and MV file number to continue.");
         }
 
-        const matches = DEMO_MODE
-          ? readDemoViolationsByPlate(normalizedPlate)
-          : (await lookupViolationsByPlate({ data: { vehiclePlate: normalizedPlate } })).tickets;
+        const matches = (await lookupByPlate(normalizedPlate, mvFileNumber.trim())).tickets;
         if (!matches.length) {
           throw new Error(
             "We couldn't find violations for that plate. Check the details and try again.",
@@ -624,16 +535,7 @@ function CitizenTicketLookup() {
       }
 
       const normalizedNumber = ticketNumber.trim().toUpperCase();
-      if (DEMO_MODE) {
-        const demoTicket = DEMO_TICKETS.find((item) => item.ticket_number === normalizedNumber);
-        if (!demoTicket) {
-          throw new Error("We couldn't find that ticket. Check the number and try again.");
-        }
-        setTicket(demoTicket);
-        return;
-      }
-
-      const result = await lookupTicket({ data: { ticketNumber: normalizedNumber } });
+      const result = await lookupTicket(normalizedNumber);
       if (!result.ticket) {
         throw new Error("We couldn't find that ticket. Check the number and try again.");
       }
@@ -715,7 +617,7 @@ function CitizenTicketLookup() {
           <p className="mt-3 text-xs text-muted-foreground">
             {lookupMode === "ticket"
               ? "Demo tickets: OVS-2026-000101, OVS-2026-000102, or OVS-2026-000103."
-              : "Demo plate: ABC 1122. The MV file number is required for the lookup flow."}
+              : "Demo plate: ABC 1122. MV file: MV-1122."}
           </p>
         ) : null}
       </div>
@@ -755,7 +657,13 @@ function CitizenTicketLookup() {
             </div>
             {ticket.status === "unpaid" ? (
               <Button asChild>
-                <Link to="/pay">
+                <Link
+                  to="/pay"
+                  search={{
+                    plate: ticket.vehicle_plate ?? "",
+                    mv: lookupMode === "plate" ? mvFileNumber.trim() : "",
+                  }}
+                >
                   Continue to payment <ArrowRight />
                 </Link>
               </Button>
