@@ -41,6 +41,36 @@ export function SiteFooter() {
               </Link>
             </li>
             <li>
+              <Link to="/report" className="hover:text-foreground">
+                Report ticket
+              </Link>
+            </li>
+            <li>
+              <Link to="/violations" className="hover:text-foreground">
+                Violation management
+              </Link>
+            </li>
+            <li>
+              <Link to="/request" className="hover:text-foreground">
+                Request information
+              </Link>
+            </li>
+            <li>
+              <Link to="/responses" className="hover:text-foreground">
+                Response request info
+              </Link>
+            </li>
+            <li>
+              <Link to="/adjudication" className="hover:text-foreground">
+                Adjudication status
+              </Link>
+            </li>
+            <li>
+              <Link to="/payment-status" className="hover:text-foreground">
+                Payment status
+              </Link>
+            </li>
+            <li>
               <Link to="/portal" className="hover:text-foreground">
                 Citizen portal
               </Link>

@@ -495,6 +495,9 @@ function Dashboard() {
           <span className="mr-1 text-xs text-muted-foreground">
             {userEmail} · <span className="font-semibold capitalize text-foreground">{role}</span>
           </span>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/violations">Violation management</Link>
+          </Button>
           <Button
             variant="outline"
             size="sm"

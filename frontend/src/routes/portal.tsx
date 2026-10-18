@@ -9,6 +9,7 @@ import {
   Search,
   ShieldCheck,
   Ticket,
+  Video,
   UserRound,
   WalletCards,
 } from "lucide-react";
@@ -437,6 +438,14 @@ function CitizenDashboard({
           </p>
           <h2 className="mt-2 text-2xl font-semibold">What do you need today?</h2>
           <div className="mt-6 grid gap-3">
+            <Button asChild variant="outline" className="justify-between">
+              <Link to="/report">
+                <span className="inline-flex items-center gap-2">
+                  <Video /> Report a ticket
+                </span>
+                <ArrowRight />
+              </Link>
+            </Button>
             <Button asChild variant="outline" className="justify-between">
               <Link to="/support">
                 <span className="inline-flex items-center gap-2">

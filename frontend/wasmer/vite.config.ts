@@ -8,14 +8,20 @@ import { defineConfig } from "vite";
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const spaRoutes = [
+  "adjudication",
   "auth",
   "channels",
   "dashboard",
   "features",
   "mayhulika",
   "pay",
+  "payment-status",
   "portal",
+  "report",
+  "request",
+  "responses",
   "support",
+  "violations",
 ];
 
 function copySpaRouteEntries() {

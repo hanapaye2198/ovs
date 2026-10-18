@@ -10,18 +10,29 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdjudicationRouteImport } from './routes/adjudication'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ChannelsRouteImport } from './routes/channels'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as MayhulikaRouteImport } from './routes/mayhulika'
 import { Route as PayRouteImport } from './routes/pay'
+import { Route as PaymentStatusRouteImport } from './routes/payment-status'
 import { Route as PortalRouteImport } from './routes/portal'
+import { Route as ReportRouteImport } from './routes/report'
+import { Route as RequestRouteImport } from './routes/request'
+import { Route as ResponsesRouteImport } from './routes/responses'
 import { Route as SupportRouteImport } from './routes/support'
+import { Route as ViolationsRouteImport } from './routes/violations'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdjudicationRoute = AdjudicationRouteImport.update({
+  id: '/adjudication',
+  path: '/adjudication',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -54,9 +65,29 @@ const PayRoute = PayRouteImport.update({
   path: '/pay',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaymentStatusRoute = PaymentStatusRouteImport.update({
+  id: '/payment-status',
+  path: '/payment-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortalRoute = PortalRouteImport.update({
   id: '/portal',
   path: '/portal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestRoute = RequestRouteImport.update({
+  id: '/request',
+  path: '/request',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResponsesRoute = ResponsesRouteImport.update({
+  id: '/responses',
+  path: '/responses',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SupportRoute = SupportRouteImport.update({
@@ -64,87 +95,134 @@ const SupportRoute = SupportRouteImport.update({
   path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ViolationsRoute = ViolationsRouteImport.update({
+  id: '/violations',
+  path: '/violations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/adjudication': typeof AdjudicationRoute
   '/auth': typeof AuthRoute
   '/channels': typeof ChannelsRoute
   '/dashboard': typeof DashboardRoute
   '/features': typeof FeaturesRoute
   '/mayhulika': typeof MayhulikaRoute
   '/pay': typeof PayRoute
+  '/payment-status': typeof PaymentStatusRoute
   '/portal': typeof PortalRoute
+  '/report': typeof ReportRoute
+  '/request': typeof RequestRoute
+  '/responses': typeof ResponsesRoute
   '/support': typeof SupportRoute
+  '/violations': typeof ViolationsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/adjudication': typeof AdjudicationRoute
   '/auth': typeof AuthRoute
   '/channels': typeof ChannelsRoute
   '/dashboard': typeof DashboardRoute
   '/features': typeof FeaturesRoute
   '/mayhulika': typeof MayhulikaRoute
   '/pay': typeof PayRoute
+  '/payment-status': typeof PaymentStatusRoute
   '/portal': typeof PortalRoute
+  '/report': typeof ReportRoute
+  '/request': typeof RequestRoute
+  '/responses': typeof ResponsesRoute
   '/support': typeof SupportRoute
+  '/violations': typeof ViolationsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/adjudication': typeof AdjudicationRoute
   '/auth': typeof AuthRoute
   '/channels': typeof ChannelsRoute
   '/dashboard': typeof DashboardRoute
   '/features': typeof FeaturesRoute
   '/mayhulika': typeof MayhulikaRoute
   '/pay': typeof PayRoute
+  '/payment-status': typeof PaymentStatusRoute
   '/portal': typeof PortalRoute
+  '/report': typeof ReportRoute
+  '/request': typeof RequestRoute
+  '/responses': typeof ResponsesRoute
   '/support': typeof SupportRoute
+  '/violations': typeof ViolationsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/adjudication'
     | '/auth'
     | '/channels'
     | '/dashboard'
     | '/features'
     | '/mayhulika'
     | '/pay'
+    | '/payment-status'
     | '/portal'
+    | '/report'
+    | '/request'
+    | '/responses'
     | '/support'
+    | '/violations'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/adjudication'
     | '/auth'
     | '/channels'
     | '/dashboard'
     | '/features'
     | '/mayhulika'
     | '/pay'
+    | '/payment-status'
     | '/portal'
+    | '/report'
+    | '/request'
+    | '/responses'
     | '/support'
+    | '/violations'
   id:
     | '__root__'
     | '/'
+    | '/adjudication'
     | '/auth'
     | '/channels'
     | '/dashboard'
     | '/features'
     | '/mayhulika'
     | '/pay'
+    | '/payment-status'
     | '/portal'
+    | '/report'
+    | '/request'
+    | '/responses'
     | '/support'
+    | '/violations'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdjudicationRoute: typeof AdjudicationRoute
   AuthRoute: typeof AuthRoute
   ChannelsRoute: typeof ChannelsRoute
   DashboardRoute: typeof DashboardRoute
   FeaturesRoute: typeof FeaturesRoute
   MayhulikaRoute: typeof MayhulikaRoute
   PayRoute: typeof PayRoute
+  PaymentStatusRoute: typeof PaymentStatusRoute
   PortalRoute: typeof PortalRoute
+  ReportRoute: typeof ReportRoute
+  RequestRoute: typeof RequestRoute
+  ResponsesRoute: typeof ResponsesRoute
   SupportRoute: typeof SupportRoute
+  ViolationsRoute: typeof ViolationsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -154,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adjudication': {
+      id: '/adjudication'
+      path: '/adjudication'
+      fullPath: '/adjudication'
+      preLoaderRoute: typeof AdjudicationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -198,11 +283,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/payment-status': {
+      id: '/payment-status'
+      path: '/payment-status'
+      fullPath: '/payment-status'
+      preLoaderRoute: typeof PaymentStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal': {
       id: '/portal'
       path: '/portal'
       fullPath: '/portal'
       preLoaderRoute: typeof PortalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/request': {
+      id: '/request'
+      path: '/request'
+      fullPath: '/request'
+      preLoaderRoute: typeof RequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/responses': {
+      id: '/responses'
+      path: '/responses'
+      fullPath: '/responses'
+      preLoaderRoute: typeof ResponsesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/support': {
@@ -212,19 +325,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SupportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/violations': {
+      id: '/violations'
+      path: '/violations'
+      fullPath: '/violations'
+      preLoaderRoute: typeof ViolationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdjudicationRoute: AdjudicationRoute,
   AuthRoute: AuthRoute,
   ChannelsRoute: ChannelsRoute,
   DashboardRoute: DashboardRoute,
   FeaturesRoute: FeaturesRoute,
   MayhulikaRoute: MayhulikaRoute,
   PayRoute: PayRoute,
+  PaymentStatusRoute: PaymentStatusRoute,
   PortalRoute: PortalRoute,
+  ReportRoute: ReportRoute,
+  RequestRoute: RequestRoute,
+  ResponsesRoute: ResponsesRoute,
   SupportRoute: SupportRoute,
+  ViolationsRoute: ViolationsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

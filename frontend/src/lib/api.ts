@@ -136,7 +136,7 @@ async function request<T>(
   try {
     response = await fetch(`${API_URL}/api${path}`, init);
   } catch {
-    throw new ApiError("Cannot reach the Laravel API. Start it with php artisan serve in the backend folder.");
+    throw new ApiError("Cannot reach the Laravel API. Start it with php artisan serve from the project root.");
   }
 
   const payload = (await response.json().catch(() => ({}))) as ErrorPayload;

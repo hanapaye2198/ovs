@@ -13,6 +13,12 @@ const nav = [
   { to: "/channels", label: "Payment channels" },
   { to: "/portal", label: "Citizen portal" },
   { to: "/support", label: "Support" },
+  { to: "/report", label: "Report ticket" },
+  { to: "/violations", label: "Violations" },
+  { to: "/request", label: "Requests" },
+  { to: "/responses", label: "Responses" },
+  { to: "/adjudication", label: "Adjudication" },
+  { to: "/payment-status", label: "Payments" },
   { to: "/pay", label: "Pay a ticket" },
 ] as const;
 
